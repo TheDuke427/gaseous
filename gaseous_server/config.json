@@ -22,7 +22,7 @@
   },
   "map": ["share:rw"],
   "options": {
-    "database_host": "homeassistant.local",
+    "database_host": "core-mariadb",
     "database_user": "gaseous",
     "database_password": "password",
     "database_name": "gaseousdb",
