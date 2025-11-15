@@ -1,42 +1,16 @@
-ARG BUILD_FROM
-FROM $BUILD_FROM
+FROM gaseousgames/gaseousserver:latest
 
-# Set shell
-SHELL ["/bin/bash", "-o", "pipefail", "-c"]
-
-# Install dependencies
-RUN apk add --no-cache \
-    bash \
-    curl \
-    openjdk11-jre \
-    mariadb-client \
+# Install additional tools for Home Assistant integration
+RUN apt-get update && apt-get install -y \
     jq \
-    file \
-    && rm -rf /var/cache/apk/*
-
-# Create directories
-RUN mkdir -p /data /opt/gaseous
-
-# Set working directory
-WORKDIR /opt/gaseous
-
-# Download Gaseous JAR with better error handling
-RUN curl -fsSL -o /opt/gaseous/gaseous-server.jar \
-    https://github.com/gaseous-project/gaseous-server/releases/download/v1.7.0/gaseous-server-1.7.0.jar \
-    || curl -fsSL -o /opt/gaseous/gaseous-server.jar \
-    https://github.com/TheDuke427/gaseous/releases/download/v1.7.0/gaseous-server-1.7.0.jar \
-    || { echo "Failed to download JAR"; exit 1; }
-
-# Verify the JAR file
-RUN file /opt/gaseous/gaseous-server.jar && \
-    ls -lh /opt/gaseous/gaseous-server.jar
+    && rm -rf /var/lib/apt/lists/*
 
 # Copy startup script
 COPY run.sh /run.sh
 RUN chmod a+x /run.sh
 
 # Expose port
-EXPOSE 6430
+EXPOSE 80
 
 # Use run.sh as entrypoint
 CMD ["/run.sh"]
