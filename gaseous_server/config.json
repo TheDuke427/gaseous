@@ -4,14 +4,20 @@
   "slug": "gaseous_server",
   "description": "Self-hosted Gaseous Server for emulation library management",
   "arch": ["amd64", "armv7", "aarch64"],
-  "startup": "services",
+  "startup": "application",
   "boot": "auto",
   "host_network": false,
   "ingress": true,
   "ingress_port": 6430,
   "panel_icon": "mdi:gamepad-variant",
   "panel_title": "Gaseous",
-  "ports": { "6430/tcp": 6430 },
+  "ports": {
+    "6430/tcp": 6430
+  },
+  "ports_description": {
+    "6430/tcp": "Gaseous Server Web UI"
+  },
+  "map": ["share:rw"],
   "options": {
     "database_host": "homeassistant.local",
     "database_user": "gaseous",
@@ -24,10 +30,10 @@
   "schema": {
     "database_host": "str",
     "database_user": "str",
-    "database_password": "str",
+    "database_password": "password",
     "database_name": "str",
     "igdb_client_id": "str",
-    "igdb_client_secret": "str",
-    "port": "int"
+    "igdb_client_secret": "password",
+    "port": "port"
   }
 }
