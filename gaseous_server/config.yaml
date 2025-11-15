@@ -5,7 +5,7 @@ description: "Self-hosted Gaseous Server for emulation library management"
 arch:
   - amd64
   - armv7
-  - arm64
+  - aarch64
 startup: "services"
 boot: "auto"
 host_network: false
@@ -31,5 +31,3 @@ schema:
   igdb_client_id: str
   igdb_client_secret: str
   port: int
-map:
-  /media/JELLYFINMEDIA/roms: /data/roms
