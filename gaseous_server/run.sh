@@ -68,4 +68,20 @@ mkdir -p /data/roms /data/config
 
 # Start Gaseous Server
 echo "[INFO] Starting Gaseous Server with database: ${DB_HOST}"
-exec /usr/bin/dotnet /app/gaseous-server.dll
+
+# Find the actual gaseous-server executable
+if [ -f /app/gaseous-server.dll ]; then
+    echo "[INFO] Found DLL at /app/gaseous-server.dll"
+    exec /usr/bin/dotnet /app/gaseous-server.dll
+elif [ -f /app/GaseousServer.dll ]; then
+    echo "[INFO] Found DLL at /app/GaseousServer.dll"
+    exec /usr/bin/dotnet /app/GaseousServer.dll
+elif [ -f /app/gaseous-server ]; then
+    echo "[INFO] Found executable at /app/gaseous-server"
+    exec /app/gaseous-server
+else
+    echo "[ERROR] Searching for Gaseous Server files..."
+    find /app -type f -name "*.dll" -o -name "gaseous*" 2>/dev/null
+    echo "[ERROR] Could not find Gaseous Server executable!"
+    exit 1
+fi
