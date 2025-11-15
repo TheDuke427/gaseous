@@ -1,7 +1,5 @@
 #!/usr/bin/env bashio
-# ==============================================================================
 # Home Assistant Add-on: Gaseous Server
-# ==============================================================================
 
 bashio::log.info "Starting Gaseous Server add-on..."
 
