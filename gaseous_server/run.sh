@@ -17,7 +17,42 @@ IGDB_CLIENT_SECRET=$(jq --raw-output '.igdb_client_secret' $CONFIG_PATH)
 echo "[INFO] Configuration loaded"
 echo "[INFO] Database: ${DB_HOST}:${DB_PORT}/${DB_NAME}"
 
-# Set Gaseous Server environment variables
+# Find and overwrite any existing config files
+for config_file in /root/.gaseous-server/config.json /app/config.json /config/config.json; do
+    if [ -f "$config_file" ] || [ ! -d "$(dirname "$config_file")" ]; then
+        mkdir -p "$(dirname "$config_file")"
+        echo "[INFO] Creating config at: $config_file"
+        
+        cat > "$config_file" << EOF
+{
+  "DatabaseConfiguration": {
+    "HostName": "${DB_HOST}",
+    "Port": ${DB_PORT},
+    "UserName": "${DB_USER}",
+    "Password": "${DB_PASS}",
+    "DatabaseName": "${DB_NAME}"
+  },
+  "MetadataConfiguration": {
+    "MetadataSource": 1,
+    "SignatureSource": 0,
+    "MaxLibraryScanWorkers": 4,
+    "HasheousHost": "https://hasheous.org/"
+  },
+  "IGDBConfiguration": {
+    "ClientId": "${IGDB_CLIENT_ID}",
+    "Secret": "${IGDB_CLIENT_SECRET}"
+  },
+  "LoggingConfiguration": {
+    "DebugLogging": false,
+    "LogRetention": 7,
+    "AlwaysLogToDisk": false
+  }
+}
+EOF
+    fi
+done
+
+# Also set environment variables as backup
 export DatabaseConfiguration__HostName="${DB_HOST}"
 export DatabaseConfiguration__Port="${DB_PORT}"
 export DatabaseConfiguration__UserName="${DB_USER}"
@@ -30,6 +65,6 @@ export ASPNETCORE_URLS="http://0.0.0.0:80"
 # Create data directories
 mkdir -p /data/roms /data/config
 
-# Start Gaseous Server with environment variables
+# Start Gaseous Server
 echo "[INFO] Starting Gaseous Server with database: ${DB_HOST}"
 exec /usr/bin/dotnet /app/gaseous-server.dll
