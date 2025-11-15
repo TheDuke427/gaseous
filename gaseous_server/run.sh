@@ -5,7 +5,7 @@ CONFIG_PATH=/data/options.json
 
 echo "[INFO] Starting Gaseous Server..."
 
-# Parse configuration
+# Parse configuration from Home Assistant
 DB_HOST=$(jq --raw-output '.database_host' $CONFIG_PATH)
 DB_PORT=$(jq --raw-output '.database_port' $CONFIG_PATH)
 DB_USER=$(jq --raw-output '.database_user' $CONFIG_PATH)
@@ -17,73 +17,28 @@ IGDB_CLIENT_SECRET=$(jq --raw-output '.igdb_client_secret' $CONFIG_PATH)
 echo "[INFO] Configuration loaded"
 echo "[INFO] Database: ${DB_HOST}:${DB_PORT}/${DB_NAME}"
 
-# Remove any existing config files that might interfere
-rm -f /root/.gaseous-server/config.json /app/config.json /config/config.json ~/.gaseous-server/config.json 2>/dev/null || true
+# Set Gaseous Server environment variables (the way it expects them)
+export dbhost="${DB_HOST}"
+export dbport="${DB_PORT}"
+export dbuser="${DB_USER}"
+export dbpass="${DB_PASS}"
+export dbname="${DB_NAME}"
+export igdbclientid="${IGDB_CLIENT_ID}"
+export igdbclientsecret="${IGDB_CLIENT_SECRET}"
+export TZ="America/Los_Angeles"
 
-# Create config directory
-mkdir -p /root/.gaseous-server
+echo "[INFO] Starting Gaseous Server..."
 
-# Create the config file in the home directory (most likely location)
-cat > /root/.gaseous-server/config.json << 'EOF'
-{
-  "DatabaseConfiguration": {
-    "HostName": "DB_HOST_PLACEHOLDER",
-    "Port": DB_PORT_PLACEHOLDER,
-    "UserName": "DB_USER_PLACEHOLDER",
-    "Password": "DB_PASS_PLACEHOLDER",
-    "DatabaseName": "DB_NAME_PLACEHOLDER"
-  },
-  "MetadataConfiguration": {
-    "MetadataSource": 1,
-    "SignatureSource": 0,
-    "MaxLibraryScanWorkers": 4,
-    "HasheousHost": "https://hasheous.org/"
-  },
-  "IGDBConfiguration": {
-    "ClientId": "IGDB_ID_PLACEHOLDER",
-    "Secret": "IGDB_SECRET_PLACEHOLDER"
-  },
-  "LoggingConfiguration": {
-    "DebugLogging": false,
-    "LogRetention": 7,
-    "AlwaysLogToDisk": false
-  }
-}
-EOF
-
-# Replace placeholders with actual values using sed
-sed -i "s|DB_HOST_PLACEHOLDER|${DB_HOST}|g" /root/.gaseous-server/config.json
-sed -i "s|DB_PORT_PLACEHOLDER|${DB_PORT}|g" /root/.gaseous-server/config.json
-sed -i "s|DB_USER_PLACEHOLDER|${DB_USER}|g" /root/.gaseous-server/config.json
-sed -i "s|DB_PASS_PLACEHOLDER|${DB_PASS}|g" /root/.gaseous-server/config.json
-sed -i "s|DB_NAME_PLACEHOLDER|${DB_NAME}|g" /root/.gaseous-server/config.json
-sed -i "s|IGDB_ID_PLACEHOLDER|${IGDB_CLIENT_ID}|g" /root/.gaseous-server/config.json
-sed -i "s|IGDB_SECRET_PLACEHOLDER|${IGDB_CLIENT_SECRET}|g" /root/.gaseous-server/config.json
-
-echo "[INFO] Config file created at /root/.gaseous-server/config.json"
-cat /root/.gaseous-server/config.json
-
-# Create data directories
-mkdir -p /data/roms /data/config
-
-# Start Gaseous Server
-echo "[INFO] Starting Gaseous Server with database: ${DB_HOST}"
-
-# Find the actual gaseous-server executable
-if [ -f /app/gaseous-server.dll ]; then
-    echo "[INFO] Found DLL at /app/gaseous-server.dll"
-    exec /usr/bin/dotnet /app/gaseous-server.dll
-elif [ -f /app/GaseousServer.dll ]; then
-    echo "[INFO] Found DLL at /app/GaseousServer.dll"
-    exec /usr/bin/dotnet /app/GaseousServer.dll
-elif [ -f /app/gaseous-server ]; then
-    echo "[INFO] Found executable at /app/gaseous-server"
-    exec /app/gaseous-server
+# Find and run the gaseous server entrypoint
+if [ -f /entrypoint.sh ]; then
+    echo "[INFO] Using /entrypoint.sh"
+    exec /entrypoint.sh
+elif [ -f /usr/local/bin/entrypoint.sh ]; then
+    echo "[INFO] Using /usr/local/bin/entrypoint.sh"
+    exec /usr/local/bin/entrypoint.sh
 else
-    echo "[ERROR] Could not find in /app, searching entire filesystem..."
-    find / -type f \( -name "*.dll" -o -name "gaseous*" \) 2>/dev/null | head -20
-    echo "[ERROR] Checking /app contents:"
-    ls -la /app/ 2>/dev/null || echo "  /app does not exist or is empty"
-    echo "[ERROR] Could not find Gaseous Server executable!"
+    echo "[ERROR] Could not find entrypoint script"
+    echo "[INFO] Searching for entrypoint..."
+    find / -name "entrypoint.sh" -o -name "start.sh" 2>/dev/null | head -10
     exit 1
 fi
