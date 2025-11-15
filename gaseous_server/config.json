@@ -25,7 +25,7 @@
     "database_host": "core-mariadb",
     "database_port": 3306,
     "database_user": "gaseous",
-    "database_password": "changeme123",
+    "database_password": "gaseous",
     "database_name": "gaseousdb",
     "igdb_client_id": "",
     "igdb_client_secret": ""
