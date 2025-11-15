@@ -11,32 +11,32 @@
   "boot": "auto",
   "host_network": false,
   "ingress": true,
-  "ingress_port": 6430,
+  "ingress_port": 80,
   "panel_icon": "mdi:gamepad-variant",
   "panel_title": "Gaseous",
   "ports": {
-    "6430/tcp": 6430
+    "80/tcp": 80
   },
   "ports_description": {
-    "6430/tcp": "Gaseous Server Web UI"
+    "80/tcp": "Gaseous Server Web UI"
   },
   "map": ["share:rw"],
   "options": {
     "database_host": "core-mariadb",
+    "database_port": 3306,
     "database_user": "gaseous",
     "database_password": "password",
     "database_name": "gaseousdb",
     "igdb_client_id": "",
-    "igdb_client_secret": "",
-    "port": 6430
+    "igdb_client_secret": ""
   },
   "schema": {
     "database_host": "str",
+    "database_port": "port",
     "database_user": "str",
     "database_password": "password",
     "database_name": "str",
     "igdb_client_id": "str",
-    "igdb_client_secret": "password",
-    "port": "port"
+    "igdb_client_secret": "password"
   }
 }
