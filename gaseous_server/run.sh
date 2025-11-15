@@ -3,6 +3,17 @@ set -e
 
 CONFIG_PATH=/data/options.json
 
+echo "=========================================="
+echo "[DEBUG] CHECKING MOUNTED PATHS"
+echo "=========================================="
+echo "[DEBUG] Contents of /roms:"
+ls -la /roms 2>&1 || echo "  /roms does not exist or is empty"
+echo ""
+echo "[DEBUG] Contents of /media:"
+ls -la /media 2>&1 || echo "  /media does not exist or is empty"
+echo "=========================================="
+echo ""
+
 echo "[INFO] Starting Gaseous Server..."
 
 # Parse configuration from Home Assistant
@@ -54,12 +65,6 @@ EOF
 
 echo "[INFO] Created config file at /config/config.json"
 cat /config/config.json
-
-echo "[INFO] Checking mounted paths..."
-echo "[INFO] Contents of /roms:"
-ls -la /roms 2>&1 || echo "  /roms does not exist"
-echo "[INFO] Contents of /media:"
-ls -la /media 2>&1 || echo "  /media does not exist"
 
 # Also set env vars as backup (though config file takes precedence)
 export dbhost="${DB_HOST}"
