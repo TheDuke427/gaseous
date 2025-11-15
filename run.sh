@@ -32,4 +32,4 @@ exec java -jar /opt/gaseous/gaseous-server.jar \
     --igdb.client-id="$IGDB_CLIENT_ID" \
     --igdb.client-secret="$IGDB_CLIENT_SECRET" \
     --server.port="$PORT" \
-    --data.dir="/data"
+    --data.dir="/data/roms"
