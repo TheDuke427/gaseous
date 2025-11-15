@@ -5,7 +5,6 @@
 
 bashio::log.info "Starting Gaseous Server add-on..."
 
-# Configuration variables
 DB_HOST=$(bashio::config 'database_host')
 DB_USER=$(bashio::config 'database_user')
 DB_PASS=$(bashio::config 'database_password')
@@ -17,16 +16,16 @@ PORT=$(bashio::config 'port')
 bashio::log.info "Waiting for database to be ready..."
 until mysql -h "$DB_HOST" -u "$DB_USER" -p"$DB_PASS" -e "USE $DB_NAME;" &>/dev/null; do
     sleep 2
-    bashio::log.info "Still waiting..."
+    bashio::log.info "Still waiting for DB..."
 done
 
 bashio::log.info "Launching Gaseous Server..."
 exec java -jar /opt/gaseous/gaseous-server.jar \
-    --database.host="$DB_HOST" \
-    --database.user="$DB_USER" \
-    --database.password="$DB_PASS" \
-    --database.name="$DB_NAME" \
-    --igdb.client-id="$IGDB_CLIENT_ID" \
-    --igdb.client-secret="$IGDB_CLIENT_SECRET" \
-    --server.port="$PORT" \
-    --data.dir="/data/roms"
+     --database.host="$DB_HOST" \
+     --database.user="$DB_USER" \
+     --database.password="$DB_PASS" \
+     --database.name="$DB_NAME" \
+     --igdb.client-id="$IGDB_CLIENT_ID" \
+     --igdb.client-secret="$IGDB_CLIENT_SECRET" \
+     --server.port="$PORT" \
+     --data.dir="/data/roms"
