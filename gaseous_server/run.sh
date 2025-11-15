@@ -44,6 +44,10 @@ cat > /config/config.json << EOF
     "DebugLogging": false,
     "LogRetention": 7,
     "AlwaysLogToDisk": false
+  },
+  "ServerConfiguration": {
+    "UseForwardedHeaders": true,
+    "PathBase": ""
   }
 }
 EOF
@@ -60,6 +64,9 @@ export dbname="${DB_NAME}"
 export igdbclientid="${IGDB_CLIENT_ID}"
 export igdbclientsecret="${IGDB_CLIENT_SECRET}"
 export TZ="America/Los_Angeles"
+export ASPNETCORE_FORWARDEDHEADERS_ENABLED=true
+
+echo "[INFO] Environment variables set, starting Gaseous Server..."
 
 # Find and run the gaseous server executable
 GASEOUS_BIN=$(find / -type f -executable -name "gaseous-server" 2>/dev/null | head -1)
