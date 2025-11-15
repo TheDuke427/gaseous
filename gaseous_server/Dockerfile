@@ -24,5 +24,6 @@ RUN chmod a+x /usr/local/bin/run-wrapper.sh
 # Expose port
 EXPOSE 80
 
-# Use wrapper that sets env vars then calls original entrypoint
-CMD ["/usr/local/bin/run-wrapper.sh"]
+# Clear any entrypoint from base image and use our wrapper
+ENTRYPOINT []
+CMD ["/bin/bash", "/usr/local/bin/run-wrapper.sh"]
