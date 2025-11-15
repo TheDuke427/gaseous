@@ -80,8 +80,10 @@ elif [ -f /app/gaseous-server ]; then
     echo "[INFO] Found executable at /app/gaseous-server"
     exec /app/gaseous-server
 else
-    echo "[ERROR] Searching for Gaseous Server files..."
-    find /app -type f -name "*.dll" -o -name "gaseous*" 2>/dev/null
+    echo "[ERROR] Could not find in /app, searching entire filesystem..."
+    find / -type f \( -name "*.dll" -o -name "gaseous*" \) 2>/dev/null | head -20
+    echo "[ERROR] Checking /app contents:"
+    ls -la /app/ 2>/dev/null || echo "  /app does not exist or is empty"
     echo "[ERROR] Could not find Gaseous Server executable!"
     exit 1
 fi
