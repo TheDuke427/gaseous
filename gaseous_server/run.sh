@@ -17,7 +17,7 @@ IGDB_CLIENT_SECRET=$(jq --raw-output '.igdb_client_secret' $CONFIG_PATH)
 echo "[INFO] Configuration loaded"
 echo "[INFO] Database: ${DB_HOST}:${DB_PORT}/${DB_NAME}"
 
-# Set Gaseous Server environment variables (the way it expects them)
+# Set Gaseous Server environment variables
 export dbhost="${DB_HOST}"
 export dbport="${DB_PORT}"
 export dbuser="${DB_USER}"
@@ -27,18 +27,29 @@ export igdbclientid="${IGDB_CLIENT_ID}"
 export igdbclientsecret="${IGDB_CLIENT_SECRET}"
 export TZ="America/Los_Angeles"
 
-echo "[INFO] Starting Gaseous Server..."
+echo "[INFO] Environment variables set, starting Gaseous Server..."
 
-# Find and run the gaseous server entrypoint
-if [ -f /entrypoint.sh ]; then
-    echo "[INFO] Using /entrypoint.sh"
-    exec /entrypoint.sh
-elif [ -f /usr/local/bin/entrypoint.sh ]; then
-    echo "[INFO] Using /usr/local/bin/entrypoint.sh"
-    exec /usr/local/bin/entrypoint.sh
+# The original image should have a working executable
+# Try common locations for .NET apps
+if [ -f /home/gaseous/gaseous-server ]; then
+    echo "[INFO] Found at /home/gaseous/gaseous-server"
+    cd /home/gaseous
+    exec ./gaseous-server
+elif [ -f /usr/local/bin/gaseous-server ]; then
+    echo "[INFO] Found at /usr/local/bin/gaseous-server"
+    exec /usr/local/bin/gaseous-server
 else
-    echo "[ERROR] Could not find entrypoint script"
-    echo "[INFO] Searching for entrypoint..."
-    find / -name "entrypoint.sh" -o -name "start.sh" 2>/dev/null | head -10
-    exit 1
+    # Last resort - search for it
+    echo "[INFO] Searching for executable..."
+    GASEOUS_BIN=$(find / -type f -executable -name "gaseous-server" 2>/dev/null | head -1)
+    
+    if [ -n "$GASEOUS_BIN" ]; then
+        echo "[INFO] Found at $GASEOUS_BIN"
+        exec "$GASEOUS_BIN"
+    else
+        echo "[ERROR] Cannot find gaseous-server executable"
+        echo "[INFO] Listing / contents:"
+        ls -la / | head -20
+        exit 1
+    fi
 fi
