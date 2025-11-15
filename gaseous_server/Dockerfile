@@ -11,7 +11,10 @@ RUN rm -rf /home/gaseous/.gaseous-server/config.json \
 
 # Create symlink so Gaseous config goes to /config (Home Assistant managed)
 RUN mkdir -p /config && \
+    mkdir -p /home/gaseous && \
+    rm -rf /home/gaseous/.gaseous-server && \
     ln -sf /config /home/gaseous/.gaseous-server && \
+    rm -rf /root/.gaseous-server && \
     ln -sf /config /root/.gaseous-server
 
 # Copy startup wrapper script
