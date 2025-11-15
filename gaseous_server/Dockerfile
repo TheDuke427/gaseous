@@ -32,7 +32,7 @@ COPY run.sh /run.sh
 RUN chmod +x /run.sh
 
 # Expose default port
-EXPOSE 5000
+EXPOSE 6430
 
 # Entrypoint
 CMD [ "/run.sh" ]
