@@ -11,6 +11,9 @@ RUN rm -f /root/.gaseous-server/config.json \
     /config/config.json \
     ~/.gaseous-server/config.json 2>/dev/null || true
 
+# Clear any existing entrypoint
+ENTRYPOINT []
+
 # Copy startup script
 COPY run.sh /run.sh
 RUN chmod a+x /run.sh
@@ -18,5 +21,5 @@ RUN chmod a+x /run.sh
 # Expose port
 EXPOSE 80
 
-# Use run.sh as entrypoint
-CMD ["/run.sh"]
+# Use run.sh as CMD
+CMD ["/bin/bash", "/run.sh"]
