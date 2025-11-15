@@ -17,7 +17,14 @@ IGDB_CLIENT_SECRET=$(jq --raw-output '.igdb_client_secret' $CONFIG_PATH)
 echo "[INFO] Configuration loaded"
 echo "[INFO] Database: ${DB_HOST}:${DB_PORT}/${DB_NAME}"
 
-# Set Gaseous Server environment variables
+# CRITICAL: Delete any existing config file so Gaseous will read from env vars
+rm -f /home/gaseous/.gaseous-server/config.json \
+      /root/.gaseous-server/config.json \
+      /data/.gaseous-server/config.json 2>/dev/null || true
+
+echo "[INFO] Cleared existing config files"
+
+# Set Gaseous Server environment variables (lowercase as expected by the app)
 export dbhost="${DB_HOST}"
 export dbport="${DB_PORT}"
 export dbuser="${DB_USER}"
@@ -27,29 +34,18 @@ export igdbclientid="${IGDB_CLIENT_ID}"
 export igdbclientsecret="${IGDB_CLIENT_SECRET}"
 export TZ="America/Los_Angeles"
 
-echo "[INFO] Environment variables set, starting Gaseous Server..."
+echo "[INFO] Environment variables set"
+echo "[DEBUG] dbhost=${dbhost}"
+echo "[DEBUG] dbuser=${dbuser}"
+echo "[DEBUG] dbname=${dbname}"
 
-# The original image should have a working executable
-# Try common locations for .NET apps
-if [ -f /home/gaseous/gaseous-server ]; then
-    echo "[INFO] Found at /home/gaseous/gaseous-server"
-    cd /home/gaseous
-    exec ./gaseous-server
-elif [ -f /usr/local/bin/gaseous-server ]; then
-    echo "[INFO] Found at /usr/local/bin/gaseous-server"
-    exec /usr/local/bin/gaseous-server
+# Find and run the gaseous server executable
+GASEOUS_BIN=$(find / -type f -executable -name "gaseous-server" 2>/dev/null | head -1)
+
+if [ -n "$GASEOUS_BIN" ]; then
+    echo "[INFO] Found Gaseous Server at: $GASEOUS_BIN"
+    exec "$GASEOUS_BIN"
 else
-    # Last resort - search for it
-    echo "[INFO] Searching for executable..."
-    GASEOUS_BIN=$(find / -type f -executable -name "gaseous-server" 2>/dev/null | head -1)
-    
-    if [ -n "$GASEOUS_BIN" ]; then
-        echo "[INFO] Found at $GASEOUS_BIN"
-        exec "$GASEOUS_BIN"
-    else
-        echo "[ERROR] Cannot find gaseous-server executable"
-        echo "[INFO] Listing / contents:"
-        ls -la / | head -20
-        exit 1
-    fi
+    echo "[ERROR] Cannot find gaseous-server executable"
+    exit 1
 fi
