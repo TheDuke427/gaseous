@@ -1,6 +1,5 @@
 # Use Home Assistant base image
-ARG BUILD_FROM
-FROM $BUILD_FROM
+FROM ghcr.io/home-assistant/amd64-base:latest
 
 LABEL maintainer="you@example.com"
 LABEL description="Gaseous Server HA Add-on"
