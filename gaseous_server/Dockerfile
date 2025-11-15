@@ -27,8 +27,9 @@ WORKDIR /opt/gaseous
 
 # Copy Gaseous JAR manually (download separately if desired)
 # If you want automatic download, see the dynamic GitHub release method
-COPY gaseous-server.jar /opt/gaseous/gaseous-server.jar
-RUN chmod +x /opt/gaseous/gaseous-server.jar
+RUN curl -L -o /opt/gaseous/gaseous-server.jar \
+    https://github.com/TheDuke427/gaseous/releases/download/v1.7.0/gaseous-server-1.7.0.jar \
+    && chmod +x /opt/gaseous/gaseous-server.jar
 
 # Copy run script
 COPY run.sh /run.sh
