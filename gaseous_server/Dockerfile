@@ -10,7 +10,7 @@ RUN apk add --no-cache \
     curl \
     openjdk11-jre \
     mariadb-client \
-    dos2unix \
+    jq \
     && rm -rf /var/cache/apk/*
 
 # Create directories
@@ -25,12 +25,12 @@ RUN curl -L -o /opt/gaseous/gaseous-server.jar \
     || curl -L -o /opt/gaseous/gaseous-server.jar \
     https://github.com/TheDuke427/gaseous/releases/download/v1.7.0/gaseous-server-1.7.0.jar
 
-# Copy rootfs and set permissions
-COPY rootfs /
-RUN dos2unix /etc/services.d/gaseous/run && \
-    dos2unix /etc/services.d/gaseous/finish && \
-    chmod a+x /etc/services.d/gaseous/run && \
-    chmod a+x /etc/services.d/gaseous/finish
+# Copy startup script
+COPY run.sh /run.sh
+RUN chmod a+x /run.sh
 
 # Expose port
 EXPOSE 6430
+
+# Use run.sh as entrypoint
+CMD ["/run.sh"]
