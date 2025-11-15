@@ -20,6 +20,23 @@ echo "[INFO] Port: ${PORT}"
 
 # Wait for database
 echo "[INFO] Waiting for database connection..."
+echo "[INFO] Trying to connect to: ${DB_HOST}"
+
+# Test DNS resolution first
+if ! getent hosts "${DB_HOST}" > /dev/null 2>&1; then
+    echo "[WARN] Cannot resolve hostname: ${DB_HOST}"
+    echo "[INFO] Trying alternative hostnames..."
+    
+    # Try common alternatives
+    for alt_host in "core-mariadb" "mariadb" "localhost" "127.0.0.1"; do
+        if getent hosts "${alt_host}" > /dev/null 2>&1 || [ "${alt_host}" = "127.0.0.1" ]; then
+            echo "[INFO] Found working hostname: ${alt_host}"
+            DB_HOST="${alt_host}"
+            break
+        fi
+    done
+fi
+
 RETRY=0
 until mysql -h "${DB_HOST}" -u "${DB_USER}" -p"${DB_PASS}" -e "SELECT 1;" &>/dev/null || [ ${RETRY} -eq 30 ]; do
     echo "[INFO] Waiting for database... (${RETRY}/30)"
@@ -37,6 +54,16 @@ mkdir -p /data/roms /data/config
 # Start Gaseous Server
 echo "[INFO] Starting Gaseous Server..."
 cd /opt/gaseous
+
+# Verify JAR exists and is valid
+if [ ! -f gaseous-server.jar ]; then
+    echo "[ERROR] gaseous-server.jar not found!"
+    exit 1
+fi
+
+echo "[INFO] JAR file info:"
+file gaseous-server.jar
+ls -lh gaseous-server.jar
 
 exec java -jar gaseous-server.jar \
     --database.host="${DB_HOST}" \
