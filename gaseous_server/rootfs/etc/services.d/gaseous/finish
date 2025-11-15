@@ -1,4 +1,4 @@
-#!/usr/bin/execlineb -S0
+#!/command/execlineb -S0
 # ==============================================================================
 # Home Assistant Add-on: Gaseous Server
 # Take down the S6 supervision tree when the service fails
