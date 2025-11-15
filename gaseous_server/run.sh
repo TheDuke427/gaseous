@@ -55,6 +55,12 @@ EOF
 echo "[INFO] Created config file at /config/config.json"
 cat /config/config.json
 
+echo "[INFO] Checking mounted paths..."
+echo "[INFO] Contents of /roms:"
+ls -la /roms 2>&1 || echo "  /roms does not exist"
+echo "[INFO] Contents of /media:"
+ls -la /media 2>&1 || echo "  /media does not exist"
+
 # Also set env vars as backup (though config file takes precedence)
 export dbhost="${DB_HOST}"
 export dbport="${DB_PORT}"
@@ -68,13 +74,11 @@ export ASPNETCORE_FORWARDEDHEADERS_ENABLED=true
 
 echo "[INFO] Environment variables set, starting Gaseous Server..."
 
-# Find and run the gaseous server executable
-GASEOUS_BIN=$(find / -type f -executable -name "gaseous-server" 2>/dev/null | head -1)
-
-if [ -n "$GASEOUS_BIN" ]; then
-    echo "[INFO] Found Gaseous Server at: $GASEOUS_BIN"
-    exec "$GASEOUS_BIN"
+# Start Gaseous Server (we know it's at /App/gaseous-server from earlier logs)
+if [ -f /App/gaseous-server ]; then
+    echo "[INFO] Starting Gaseous Server at /App/gaseous-server"
+    exec /App/gaseous-server
 else
-    echo "[ERROR] Cannot find gaseous-server executable"
+    echo "[ERROR] Cannot find gaseous-server at /App/gaseous-server"
     exit 1
 fi
