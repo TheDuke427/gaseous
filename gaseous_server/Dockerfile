@@ -8,11 +8,8 @@ SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 RUN apk add --no-cache \
     bash \
     curl \
-    unzip \
     openjdk11-jre \
     mariadb-client \
-    git \
-    wget \
     && rm -rf /var/cache/apk/*
 
 # Create directories
@@ -25,13 +22,16 @@ WORKDIR /opt/gaseous
 RUN curl -L -o /opt/gaseous/gaseous-server.jar \
     https://github.com/gaseous-project/gaseous-server/releases/download/v1.7.0/gaseous-server-1.7.0.jar \
     || curl -L -o /opt/gaseous/gaseous-server.jar \
-    https://github.com/TheDuke427/gaseous/releases/download/v1.7.0/gaseous-server-1.7.0.jar \
-    && chmod 644 /opt/gaseous/gaseous-server.jar
+    https://github.com/TheDuke427/gaseous/releases/download/v1.7.0/gaseous-server-1.7.0.jar
 
-# Copy s6-overlay service files
+# Copy run script to proper location
+COPY run.sh /usr/bin/run.sh
+RUN chmod a+x /usr/bin/run.sh
+
+# Copy rootfs and set permissions
 COPY rootfs /
+RUN chmod a+x /etc/services.d/gaseous/run && \
+    chmod a+x /etc/services.d/gaseous/finish
 
 # Expose port
 EXPOSE 6430
-
-# Note: Do NOT set CMD or ENTRYPOINT - Home Assistant supervisor handles this
