@@ -17,35 +17,19 @@ IGDB_CLIENT_SECRET=$(jq --raw-output '.igdb_client_secret' $CONFIG_PATH)
 echo "[INFO] Configuration loaded"
 echo "[INFO] Database: ${DB_HOST}:${DB_PORT}/${DB_NAME}"
 
-# Create config directory if it doesn't exist
-mkdir -p /root/.gaseous-server
+# Set Gaseous Server environment variables
+export DatabaseConfiguration__HostName="${DB_HOST}"
+export DatabaseConfiguration__Port="${DB_PORT}"
+export DatabaseConfiguration__UserName="${DB_USER}"
+export DatabaseConfiguration__Password="${DB_PASS}"
+export DatabaseConfiguration__DatabaseName="${DB_NAME}"
+export IGDBConfiguration__ClientId="${IGDB_CLIENT_ID}"
+export IGDBConfiguration__Secret="${IGDB_CLIENT_SECRET}"
+export ASPNETCORE_URLS="http://0.0.0.0:80"
 
-# Create Gaseous Server config.json
-cat > /root/.gaseous-server/config.json << EOF
-{
-  "Security": {
-    "AllowRegistration": true,
-    "UseAuthenticationServer": false
-  },
-  "Database": {
-    "Engine": "mariadb",
-    "ConnectionString": "Server=${DB_HOST};Port=${DB_PORT};User Id=${DB_USER};Password=${DB_PASS};Database=${DB_NAME};"
-  },
-  "IGDB": {
-    "ClientId": "${IGDB_CLIENT_ID}",
-    "ClientSecret": "${IGDB_CLIENT_SECRET}"
-  },
-  "Logging": {
-    "LogLevel": {
-      "Default": "Information",
-      "Microsoft.AspNetCore": "Warning"
-    }
-  }
-}
-EOF
+# Create data directories
+mkdir -p /data/roms /data/config
 
-echo "[INFO] Config file created"
-
-# Start Gaseous Server with the official entry point
-echo "[INFO] Starting Gaseous Server..."
-exec /usr/bin/dotnet /app/gaseous-server.dll --urls http://0.0.0.0:80
+# Start Gaseous Server with environment variables
+echo "[INFO] Starting Gaseous Server with database: ${DB_HOST}"
+exec /usr/bin/dotnet /app/gaseous-server.dll
