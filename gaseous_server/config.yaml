@@ -14,7 +14,7 @@ ingress_port: 5000
 panel_icon: "mdi:gamepad-variant"
 panel_title: "Gaseous"
 ports:
-  5000/tcp: 6430
+  6430/tcp: 6430
 options:
   database_host: "homeassistant.local"
   database_user: "gaseous"
