@@ -9,7 +9,7 @@ LABEL description="Gaseous Server Home Assistant Add-on"
 ENV LANG C.UTF-8
 ENV GASEOUS_HOME=/data
 
-# Install dependencies (ASCII hyphens!)
+# Install dependencies
 RUN apk add --no-cache \
     bash \
     curl \
@@ -25,7 +25,7 @@ RUN mkdir -p /data /config /opt/gaseous
 
 WORKDIR /opt/gaseous
 
-# Download latest Gaseous Server JAR (adjust version as needed)
+# Download latest Gaseous Server JAR
 RUN curl -L https://github.com/TheDuke427/gaseous/releases/download/v1.7.0/gaseous-server-1.7.0.jar -o gaseous-server.jar \
     && chmod +x gaseous-server.jar
 
