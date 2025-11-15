@@ -31,3 +31,5 @@ schema:
   igdb_client_id: str
   igdb_client_secret: str
   port: int
+map:
+  /media/JELLYFINMEDIA/roms: /data/roms
