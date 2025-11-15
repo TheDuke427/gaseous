@@ -5,7 +5,7 @@ LABEL maintainer="you@example.com"
 LABEL description="Gaseous Server HA Add-on"
 
 # Environment variables
-ENV LANG C.UTF-8
+ENV LANG=C.UTF-8
 ENV GASEOUS_HOME=/data
 
 # Install dependencies
