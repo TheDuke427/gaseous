@@ -17,14 +17,41 @@ IGDB_CLIENT_SECRET=$(jq --raw-output '.igdb_client_secret' $CONFIG_PATH)
 echo "[INFO] Configuration loaded"
 echo "[INFO] Database: ${DB_HOST}:${DB_PORT}/${DB_NAME}"
 
-# CRITICAL: Delete any existing config file so Gaseous will read from env vars
-rm -f /home/gaseous/.gaseous-server/config.json \
-      /root/.gaseous-server/config.json \
-      /data/.gaseous-server/config.json 2>/dev/null || true
+# CRITICAL: Create config file BEFORE Gaseous starts
+# This is the only way to override the defaults
+mkdir -p /config
 
-echo "[INFO] Cleared existing config files"
+cat > /config/config.json << EOF
+{
+  "DatabaseConfiguration": {
+    "HostName": "${DB_HOST}",
+    "Port": ${DB_PORT},
+    "UserName": "${DB_USER}",
+    "Password": "${DB_PASS}",
+    "DatabaseName": "${DB_NAME}"
+  },
+  "MetadataConfiguration": {
+    "MetadataSource": 1,
+    "SignatureSource": 0,
+    "MaxLibraryScanWorkers": 4,
+    "HasheousHost": "https://hasheous.org/"
+  },
+  "IGDBConfiguration": {
+    "ClientId": "${IGDB_CLIENT_ID}",
+    "Secret": "${IGDB_CLIENT_SECRET}"
+  },
+  "LoggingConfiguration": {
+    "DebugLogging": false,
+    "LogRetention": 7,
+    "AlwaysLogToDisk": false
+  }
+}
+EOF
 
-# Set Gaseous Server environment variables (lowercase as expected by the app)
+echo "[INFO] Created config file at /config/config.json"
+cat /config/config.json
+
+# Also set env vars as backup (though config file takes precedence)
 export dbhost="${DB_HOST}"
 export dbport="${DB_PORT}"
 export dbuser="${DB_USER}"
@@ -33,11 +60,6 @@ export dbname="${DB_NAME}"
 export igdbclientid="${IGDB_CLIENT_ID}"
 export igdbclientsecret="${IGDB_CLIENT_SECRET}"
 export TZ="America/Los_Angeles"
-
-echo "[INFO] Environment variables set"
-echo "[DEBUG] dbhost=${dbhost}"
-echo "[DEBUG] dbuser=${dbuser}"
-echo "[DEBUG] dbname=${dbname}"
 
 # Find and run the gaseous server executable
 GASEOUS_BIN=$(find / -type f -executable -name "gaseous-server" 2>/dev/null | head -1)
