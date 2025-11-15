@@ -28,12 +28,10 @@ RUN curl -L -o /opt/gaseous/gaseous-server.jar \
     https://github.com/TheDuke427/gaseous/releases/download/v1.7.0/gaseous-server-1.7.0.jar \
     && chmod 644 /opt/gaseous/gaseous-server.jar
 
-# Copy run script
-COPY run.sh /
-RUN chmod a+x /run.sh
+# Copy s6-overlay service files
+COPY rootfs /
 
 # Expose port
 EXPOSE 6430
 
-# Set entrypoint
-CMD ["/run.sh"]
+# Note: Do NOT set CMD or ENTRYPOINT - Home Assistant supervisor handles this
