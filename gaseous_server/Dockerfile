@@ -2,7 +2,6 @@
 ARG BUILD_FROM
 FROM $BUILD_FROM
 
-# Labels
 LABEL maintainer="you@example.com"
 LABEL description="Gaseous Server Home Assistant Add-on"
 
@@ -27,12 +26,13 @@ RUN mkdir -p /data /config /opt/gaseous
 # Set working directory
 WORKDIR /opt/gaseous
 
-# Copy run script
+# Copy Gaseous JAR and scripts
+COPY gaseous-server.jar /opt/gaseous/gaseous-server.jar
 COPY run.sh /run.sh
 RUN chmod +x /run.sh
 
-# Expose default port
+# Expose the default port
 EXPOSE 6430
 
-# Entrypoint
-CMD [ "/run.sh" ]
+# DO NOT set CMD or ENTRYPOINT
+# Let Home Assistant Supervisor handle starting /run.sh via s6
