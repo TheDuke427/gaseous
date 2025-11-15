@@ -20,7 +20,15 @@
   "ports_description": {
     "80/tcp": "Gaseous Server Web UI"
   },
-  "map": ["share:rw", "config:rw", "media"],
+  "map": ["share:rw", "config:rw"],
+  "mounts": [
+  {
+    "type": "bind",
+    "source": "/media/JELLYFINMEDIA/roms",
+    "target": "/roms",
+    "read_only": true
+  }
+],
   "options": {
     "database_host": "core-mariadb",
     "database_port": 3306,
