@@ -9,6 +9,11 @@ RUN apt-get update && apt-get install -y \
 RUN rm -rf /home/gaseous/.gaseous-server/config.json \
     /root/.gaseous-server/config.json 2>/dev/null || true
 
+# Create symlink so Gaseous config goes to /config (Home Assistant managed)
+RUN mkdir -p /config && \
+    ln -sf /config /home/gaseous/.gaseous-server && \
+    ln -sf /config /root/.gaseous-server
+
 # Copy startup wrapper script
 COPY run.sh /usr/local/bin/run-wrapper.sh
 RUN chmod a+x /usr/local/bin/run-wrapper.sh
