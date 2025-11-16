@@ -33,7 +33,5 @@ RUN curl -sS https://getcomposer.org/installer | php83 -- --install-dir=/usr/loc
 
 RUN php83 /usr/local/bin/composer install --no-dev --no-interaction
 
-COPY run.sh /run.sh
-RUN chmod +x /run.sh
-
-CMD ["/run.sh"]
+COPY run.sh /etc/services.d/monica/run
+RUN chmod +x /etc/services.d/monica/run
