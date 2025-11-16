@@ -19,6 +19,8 @@ RUN apk add --no-cache \
     php83-phar \
     php83-iconv \
     php83-xmlreader \
+    php83-xmlwriter \
+    php83-simplexml \
     mariadb-client \
     git && \
     ln -sf /usr/bin/php83 /usr/bin/php
