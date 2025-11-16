@@ -1,0 +1,15 @@
+{
+  "configuration": {
+    "postgres_password": {
+      "name": "PostgreSQL Password",
+      "description": "Password for the PostgreSQL database. IMPORTANT: Change this from the default value!"
+    },
+    "nextauth_secret": {
+      "name": "NextAuth Secret",
+      "description": "Secret key for NextAuth session security. IMPORTANT: Change this from the default value! Generate with: openssl rand -base64 32"
+    }
+  },
+  "network": {
+    "1111/tcp": "Blinko Web Interface (not needed if using Ingress)"
+  }
+}
