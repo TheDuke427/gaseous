@@ -16,6 +16,7 @@
   "ports": {
     "1111/tcp": null
   },
+  "ports_description": {},
   "options": {
     "nextauth_secret": "",
     "database_url": "postgresql://postgres:password@postgres:5432/postgres"
@@ -29,5 +30,4 @@
   ],
   "homeassistant_api": false
 }
-  "ports_description": {}
-}
+
