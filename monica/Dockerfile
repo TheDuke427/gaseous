@@ -24,7 +24,8 @@ RUN apk add --no-cache \
     git \
     jq \
     bash \
-    curl && \
+    curl \
+    openssl && \
     ln -sf /usr/bin/php83 /usr/bin/php
 
 WORKDIR /app
