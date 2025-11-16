@@ -25,9 +25,10 @@ WORKDIR /app/blinko
 RUN bun install --force
 
 # 6. Build the project components (Bypass the failed install.sh)
-# CORRECT SYNTAX: Use 'bun run' to execute the locally installed 'turbo' binary.
-# This ensures it finds the 'turbo' executable in node_modules/.bin.
-RUN bun run turbo run build
+# Trying the most common full build/release script for a monorepo project: 'release'
+# Or, based on the Tauri hint: RUN bun run turbo run tauri:build
+# Let's try 'release' first, as it often encapsulates all build steps.
+RUN bun run turbo run release
 
 # 7. Set the final working directory for the ADD-ON execution
 WORKDIR /app
@@ -36,7 +37,7 @@ WORKDIR /app
 COPY run.sh /
 
 # 9. Expose the port
-EXPOSE 8099
+EXPOZE 8099
 
 # 10. Set the entry point to execute the run script
 CMD [ "/run.sh" ]
