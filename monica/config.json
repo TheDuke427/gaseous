@@ -7,53 +7,11 @@
   "startup": "application",
   "boot": "auto",
   "ingress": true,
-  "ingress_port": 8181,
   "ingress_entry": "/",
-  "webui": "http://[HOST]:[PORT]",
-  "ports": {
-    "8181/tcp": 8181
-  },
-  "map": [
-    {
-      "type": "data",
-      "read_only": false
-    },
-    {
-      "type": "config",
-      "read_only": false
-    }
-  ],
-  "environment": {
-    "APP_ENV": "production",
-    "APP_DEBUG": "false",
-    "APP_KEY": "base64:YOUR_APP_KEY_HERE",
-    "DB_CONNECTION": "mysql",
-    "DB_HOST": "monica-db",
-    "DB_PORT": "3306",
-    "DB_DATABASE": "monica",
-    "DB_USERNAME": "monica",
-    "DB_PASSWORD": "monica_password"
-  },
-  "schema": {
-    "app_key": "str",
-    "db_host": "str",
-    "db_port": "int",
-    "db_database": "str",
-    "db_username": "str",
-    "db_password": "str"
-  },
-  "options": {
-    "app_key": "",
-    "db_host": "monica-db",
-    "db_port": 3306,
-    "db_database": "monica",
-    "db_username": "monica",
-    "db_password": ""
-  },
-  "ports_description": {
-    "8181/tcp": "Monica web interface"
-  },
   "panel_icon": "mdi:account-multiple",
   "panel_title": "Monica",
-  "panel_admin": true
+  "panel_admin": true,
+  "ports": {
+    "8181/tcp": 8181
+  }
 }
