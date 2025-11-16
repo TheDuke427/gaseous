@@ -1,18 +1,19 @@
 ARG BUILD_FROM
 FROM ${BUILD_FROM}
 
-# 1. Install system packages: git, Node.js (needed by some components), and utilities
+# 1. Install system packages: git, Node.js, npm, curl, and RUST (required for Tauri/server build)
+# We need the full Rust toolchain to compile the server components (Tauri/Rust).
 RUN apk add --no-cache \
     git \
     nodejs \
     npm \
-    # Install curl to fetch Bun
-    curl
+    curl \
+    # Install Rust for Tauri/native server components
+    rust \
+    cargo
 
-# 2. Install Bun (the preferred package manager for this project)
-# Bun is a modern JavaScript runtime that should handle monorepos better.
+# 2. Install Bun (the preferred package manager)
 RUN curl -fsSL https://bun.sh/install | bash
-# Add Bun to the PATH environment variable
 ENV PATH="/root/.bun/bin:$PATH"
 
 # 3. Define the application directory and clone the source code
@@ -23,13 +24,11 @@ RUN git clone https://github.com/blinkospace/blinko.git /app/blinko
 WORKDIR /app/blinko
 
 # 5. Install ALL dependencies using Bun.
-# Bun uses the bun.lock file and should resolve dependencies more reliably for this project.
-# We include --force to override potential issues.
 RUN bun install --force
 
-# 6. Run the project's installation script
-# This script likely compiles the frontend and backend.
-RUN sh install.sh
+# 6. Build the project components (Bypass the failed install.sh)
+# This command typically executes the build scripts defined in the root package.json for all workspaces.
+RUN bun run build
 
 # 7. Set the final working directory for the ADD-ON execution
 WORKDIR /app
