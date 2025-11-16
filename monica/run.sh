@@ -18,6 +18,29 @@ cd /app
 
 chmod -R 777 storage bootstrap/cache
 
+# Force HTTPS in AppServiceProvider
+cat > /app/app/Providers/AppServiceProvider.php <<'PHPEOF'
+<?php
+
+namespace App\Providers;
+
+use Illuminate\Support\ServiceProvider;
+use Illuminate\Support\Facades\URL;
+
+class AppServiceProvider extends ServiceProvider
+{
+    public function register(): void
+    {
+        //
+    }
+
+    public function boot(): void
+    {
+        URL::forceScheme('https');
+    }
+}
+PHPEOF
+
 # Create .env file for Laravel with HTTPS
 cat > /app/.env <<EOF
 APP_NAME=Monica
@@ -37,7 +60,6 @@ MAIL_MAILER=log
 MAIL_VERIFY_EMAIL=false
 APP_DISABLE_SIGNUP=false
 TRUSTED_PROXIES=*
-FORCE_HTTPS=true
 EOF
 
 php83 artisan migrate --force
