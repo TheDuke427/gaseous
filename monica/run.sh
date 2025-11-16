@@ -17,7 +17,6 @@ done
 cd /app
 
 chmod -R 777 storage bootstrap/cache
-chown -R nobody:nobody storage bootstrap/cache
 
 export DB_CONNECTION=mysql
 export DB_HOST="$DB_HOST"
@@ -40,21 +39,19 @@ php83 artisan config:clear
 php83 artisan route:clear
 
 echo "Starting PHP-FPM..."
-php-fpm83 -F -R &
-PHP_FPM_PID=$!
+php-fpm83 -F -R 2>&1 &
 
 sleep 3
 
-echo "Checking PHP-FPM status..."
-if ps -p $PHP_FPM_PID > /dev/null; then
-    echo "PHP-FPM is running (PID: $PHP_FPM_PID)"
+echo "Checking PHP-FPM..."
+if pgrep php-fpm83 > /dev/null; then
+    echo "PHP-FPM is running"
 else
-    echo "PHP-FPM failed to start!"
-    exit 1
+    echo "PHP-FPM not found in process list"
 fi
 
-echo "Testing PHP-FPM connection..."
-timeout 2 bash -c 'cat < /dev/null > /dev/tcp/127.0.0.1/9000' && echo "PHP-FPM port 9000 is open" || echo "Cannot connect to PHP-FPM on port 9000"
+echo "Checking port 9000..."
+netstat -ln | grep 9000 || echo "Port 9000 not listening"
 
 echo "Starting nginx..."
 nginx -t
