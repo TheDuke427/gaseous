@@ -1,6 +1,4 @@
-#!/bin/bash
-set -e
-
+#!/bin/sh
 CONFIG_PATH=/data/options.json
 
 DB_HOST=$(jq -r '.db_host' $CONFIG_PATH)
@@ -9,8 +7,8 @@ DB_DATABASE=$(jq -r '.db_database' $CONFIG_PATH)
 DB_USER=$(jq -r '.db_user' $CONFIG_PATH)
 DB_PASSWORD=$(jq -r '.db_password' $CONFIG_PATH)
 
-echo "[INFO] Waiting for database..."
-while ! mysql -h"$DB_HOST" -P"$DB_PORT" -u"$DB_USER" -p"$DB_PASSWORD" -e "SELECT 1" &>/dev/null; do
+echo "Waiting for database..."
+while ! mysql -h"$DB_HOST" -P"$DB_PORT" -u"$DB_USER" -p"$DB_PASSWORD" -e "SELECT 1" 2>/dev/null; do
     sleep 2
 done
 
@@ -28,5 +26,5 @@ export APP_URL=http://localhost:8181
 
 php83 artisan migrate --force
 
-echo "[INFO] Starting Monica..."
-exec php83 -S 0.0.0.0:8181 -t public
+echo "Starting Monica..."
+php83 -S 0.0.0.0:8181 -t public
