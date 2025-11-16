@@ -16,9 +16,9 @@ RUN git clone https://github.com/blinkospace/blinko.git /app/blinko
 # Change into the cloned directory to set the context for the next command
 WORKDIR /app/blinko
 
-# Install dependencies from the requirements file located inside the 'blinko' subdirectory,
-# plus gunicorn and python-dotenv.
-RUN pip3 install --break-system-packages -r blinko/requirements-app.txt \
+# Install dependencies from the requirements file.
+# The file is named 'requirements-app.txt' and is assumed to be in the current directory (/app/blinko).
+RUN pip3 install --break-system-packages -r requirements-app.txt \
     gunicorn \
     python-dotenv
 
