@@ -13,10 +13,10 @@ mkdir -p "${BLINKSCRIPT_MEDIA_DIR}"
 export BLINKSCRIPT_CONFIG_FILE
 export BLINKSCRIPT_MEDIA_DIR
 
-# IMPORTANT: Gunicorn is used to serve the Blinko Flask app on the required Ingress port (8099)
+# IMPORTANT: Change directory to where the Blinko source code is located
+cd /app/blinko
+
 echo "Starting Blinko web interface with Gunicorn on port 8099..."
 
-# The Blinko application is assumed to be a Flask app accessible via 'blinko_server:app'
-# Based on the Blinko repository structure, the main Flask app is defined in blinko/blinko_server.py
-# We use Gunicorn to serve this application.
+# Execute Gunicorn from within the /app/blinko directory, pointing to blinko_server:app
 exec gunicorn --bind 0.0.0.0:8099 "blinko_server:app"
