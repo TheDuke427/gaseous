@@ -2,17 +2,15 @@
   "name": "Monica CRM",
   "version": "1.0.0",
   "slug": "monica",
-  "description": "Self-hosted personal CRM for Home Assistant",
-  "arch": ["amd64", "armv7", "aarch64"],
+  "description": "Personal CRM",
+  "arch": ["amd64", "aarch64"],
   "startup": "application",
   "boot": "auto",
-  "host_network": false,
-  "homeassistant": "false",
   "ports": {
     "8181/tcp": 8181
   },
   "options": {
-    "db_host": "mariadb",
+    "db_host": "core-mariadb",
     "db_port": 3306,
     "db_database": "monica",
     "db_user": "monica",
@@ -23,6 +21,6 @@
     "db_port": "int",
     "db_database": "str",
     "db_user": "str",
-    "db_password": "str"
+    "db_password": "password"
   }
 }
