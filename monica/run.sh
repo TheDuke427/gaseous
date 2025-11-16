@@ -1,14 +1,15 @@
-#!/usr/bin/with-contenv bashio
+#!/bin/bash
+set -e
 
 CONFIG_PATH=/data/options.json
 
-DB_HOST=$(bashio::config 'db_host')
-DB_PORT=$(bashio::config 'db_port')
-DB_DATABASE=$(bashio::config 'db_database')
-DB_USER=$(bashio::config 'db_user')
-DB_PASSWORD=$(bashio::config 'db_password')
+DB_HOST=$(jq -r '.db_host' $CONFIG_PATH)
+DB_PORT=$(jq -r '.db_port' $CONFIG_PATH)
+DB_DATABASE=$(jq -r '.db_database' $CONFIG_PATH)
+DB_USER=$(jq -r '.db_user' $CONFIG_PATH)
+DB_PASSWORD=$(jq -r '.db_password' $CONFIG_PATH)
 
-bashio::log.info "Waiting for database..."
+echo "[INFO] Waiting for database..."
 while ! mysql -h"$DB_HOST" -P"$DB_PORT" -u"$DB_USER" -p"$DB_PASSWORD" -e "SELECT 1" &>/dev/null; do
     sleep 2
 done
@@ -27,5 +28,5 @@ export APP_URL=http://localhost:8181
 
 php83 artisan migrate --force
 
-bashio::log.info "Starting Monica..."
+echo "[INFO] Starting Monica..."
 exec php83 -S 0.0.0.0:8181 -t public
