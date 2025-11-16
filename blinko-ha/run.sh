@@ -13,10 +13,10 @@ mkdir -p "${BLINKSCRIPT_MEDIA_DIR}"
 export BLINKSCRIPT_CONFIG_FILE
 export BLINKSCRIPT_MEDIA_DIR
 
-# IMPORTANT: Change directory to where the Blinko source code is located
-cd /app/blinko
+# IMPORTANT: Change directory to the source folder where blinko_server.py is located
+cd /app/blinko/blinko
 
 echo "Starting Blinko web interface with Gunicorn on port 8099..."
 
-# Execute Gunicorn from within the /app/blinko directory, pointing to blinko_server:app
+# Execute Gunicorn from within the /app/blinko/blinko directory, pointing to blinko_server:app
 exec gunicorn --bind 0.0.0.0:8099 "blinko_server:app"
