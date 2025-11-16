@@ -3,6 +3,7 @@ FROM alpine:3.20
 RUN apk add --no-cache \
     php83 \
     php83-cli \
+    php83-fpm \
     php83-pdo \
     php83-pdo_mysql \
     php83-mbstring \
@@ -27,7 +28,8 @@ RUN apk add --no-cache \
     curl \
     openssl \
     nodejs \
-    npm && \
+    npm \
+    nginx && \
     ln -sf /usr/bin/php83 /usr/bin/php
 
 WORKDIR /app
@@ -41,6 +43,7 @@ RUN php83 /usr/local/bin/composer install --no-dev --no-interaction
 # Build frontend assets
 RUN npm install && npm run build
 
+COPY nginx.conf /etc/nginx/http.d/default.conf
 COPY run.sh /run.sh
 RUN chmod +x /run.sh
 
