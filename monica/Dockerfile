@@ -33,5 +33,7 @@ RUN curl -sS https://getcomposer.org/installer | php83 -- --install-dir=/usr/loc
 
 RUN php83 /usr/local/bin/composer install --no-dev --no-interaction
 
-COPY run.sh /etc/services.d/monica/run
-RUN chmod +x /etc/services.d/monica/run
+COPY run.sh /etc/s6-overlay/s6-rc.d/monica/run
+RUN chmod +x /etc/s6-overlay/s6-rc.d/monica/run && \
+    echo "longrun" > /etc/s6-overlay/s6-rc.d/monica/type && \
+    echo "monica" > /etc/s6-overlay/s6-rc.d/user/contents.d/monica
