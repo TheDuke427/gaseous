@@ -1,20 +1,20 @@
-#!/usr/bin/env bash
+#!/usr/bin/with-contenv bashio
 set -e
 
 # Config options from HA
-DB_HOST="${DB_HOST:-mariadb}"
-DB_PORT="${DB_PORT:-3306}"
-DB_DATABASE="${DB_DATABASE:-monica}"
-DB_USER="${DB_USER:-monica}"
-DB_PASSWORD="${DB_PASSWORD:-monica}"
+DB_HOST=$(bashio::config 'db_host')
+DB_PORT=$(bashio::config 'db_port')
+DB_DATABASE=$(bashio::config 'db_database')
+DB_USER=$(bashio::config 'db_user')
+DB_PASSWORD=$(bashio::config 'db_password')
 
 # Wait for MariaDB
-echo "Waiting for MariaDB at $DB_HOST:$DB_PORT..."
+bashio::log.info "Waiting for MariaDB at $DB_HOST:$DB_PORT..."
 until mysql -h"$DB_HOST" -P"$DB_PORT" -u"$DB_USER" -p"$DB_PASSWORD" -e "SELECT 1;" &>/dev/null; do
     echo -n "."
     sleep 2
 done
-echo "Database ready!"
+bashio::log.info "Database ready!"
 
 # Set environment variables for Monica
 export DB_CONNECTION=mysql
@@ -30,5 +30,5 @@ export APP_KEY=$(php -r "echo bin2hex(random_bytes(16));")
 php artisan migrate --force
 
 # Start built-in PHP server on port 8181
-echo "Starting Monica CRM on port 8181..."
+bashio::log.info "Starting Monica CRM on port 8181..."
 exec php -S 0.0.0.0:8181 -t public
