@@ -7,20 +7,34 @@ RUN apk add --no-cache \
     py3-pip \
     git
 
-# Install Blinko and its dependencies, forcing installation past PEP 668 protection
-RUN pip3 install --break-system-packages \
-    git+https://github.com/blinkospace/blinko.git@main \
+# --- Start of new strategy ---
+
+# Define the application directory
+WORKDIR /app
+
+# Clone the Blinko repository directly into the app directory
+RUN git clone https://github.com/blinkospace/blinko.git /app/blinko
+
+# Change into the cloned directory
+WORKDIR /app/blinko
+
+# Install dependencies from the requirements.txt file found inside the repo,
+# plus the necessary packages for running the Flask server (gunicorn, python-dotenv).
+RUN pip3 install --break-system-packages -r requirements.txt \
     gunicorn \
     python-dotenv
 
-# Define the working directory
+# --- End of new strategy ---
+
+# Set the final working directory to the application's root folder
 WORKDIR /app
+
+# The run.sh script must now reference the application files inside the /app/blinko folder.
+# Copy the run script
+COPY run.sh /
 
 # Expose the port for the web interface (required for Ingress)
 EXPOSE 8099
-
-# Copy the run script
-COPY run.sh /
 
 # Set the entry point
 CMD [ "/run.sh" ]
