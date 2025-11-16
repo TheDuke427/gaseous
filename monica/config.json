@@ -9,18 +9,35 @@
   "ports": {
     "8181/tcp": 8181
   },
+  "ingress": true,
+  "ingress_port": 8181,
+  "panel_icon": "mdi:account-heart",
   "options": {
     "db_host": "core-mariadb",
     "db_port": 3306,
     "db_database": "monica",
     "db_user": "monica",
-    "db_password": "monica"
+    "db_password": "monica",
+    "mail_driver": "log",
+    "mail_host": "",
+    "mail_port": 587,
+    "mail_username": "",
+    "mail_password": "",
+    "mail_from_address": "monica@localhost",
+    "mail_from_name": "Monica"
   },
   "schema": {
     "db_host": "str",
     "db_port": "int",
     "db_database": "str",
     "db_user": "str",
-    "db_password": "password"
+    "db_password": "password",
+    "mail_driver": "list(log|smtp)",
+    "mail_host": "str?",
+    "mail_port": "int?",
+    "mail_username": "str?",
+    "mail_password": "password?",
+    "mail_from_address": "str?",
+    "mail_from_name": "str?"
   }
 }
