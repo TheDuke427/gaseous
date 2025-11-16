@@ -13,6 +13,7 @@ RUN apk add --no-cache \
     cargo
 
 # 2. Install Bun (the preferred package manager)
+# Add Bun to the PATH environment variable
 RUN curl -fsSL https://bun.sh/install | bash
 ENV PATH="/root/.bun/bin:$PATH"
 
@@ -27,8 +28,8 @@ WORKDIR /app/blinko
 RUN bun install --force
 
 # 6. Build the project components (Bypass the failed install.sh)
-# This command typically executes the build scripts defined in the root package.json for all workspaces.
-RUN bun run build
+# Use 'turbo run build' to build all workspaces in the monorepo.
+RUN bun run turbo run build
 
 # 7. Set the final working directory for the ADD-ON execution
 WORKDIR /app
