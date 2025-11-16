@@ -1,40 +1,28 @@
 ARG BUILD_FROM=ghcr.io/home-assistant/amd64-base:latest
 FROM $BUILD_FROM
-SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 
-# Install dependencies
 RUN apk add --no-cache \
-    bash \
-    php \
-    php-cli \
-    php-pdo \
-    php-mysqli \
-    php-mbstring \
-    php-tokenizer \
-    php-json \
-    php-curl \
-    php-xml \
-    php-opcache \
+    php82 \
+    php82-cli \
+    php82-pdo \
+    php82-pdo_mysql \
+    php82-mbstring \
+    php82-tokenizer \
+    php82-json \
+    php82-curl \
+    php82-xml \
+    php82-opcache \
+    php82-session \
     mariadb-client \
-    unzip \
-    git \
-    && rm -rf /var/cache/apk/*
+    composer \
+    git
 
 WORKDIR /app
 
-# Clone Monica
-RUN git clone --depth 1 https://github.com/monicahq/monica.git /app
+RUN git clone --depth 1 https://github.com/monicahq/monica.git /app && \
+    composer install --no-dev --no-interaction
 
-# Create s6 service directory
-RUN mkdir -p /etc/services.d/monica
+COPY run.sh /
+RUN chmod a+x /run.sh
 
-# Copy run script
-COPY run.sh /etc/services.d/monica/run
-RUN chmod +x /etc/services.d/monica/run
-
-# Create finish script
-RUN echo -e '#!/usr/bin/execlineb -S0\n/bin/true' > /etc/services.d/monica/finish && \
-    chmod +x /etc/services.d/monica/finish
-
-# Expose port
-EXPOSE 8181
+CMD ["/run.sh"]
