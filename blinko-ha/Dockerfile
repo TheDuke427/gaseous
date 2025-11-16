@@ -5,7 +5,7 @@ FROM ${BUILD_FROM}
 RUN apk add --no-cache \
     python3 \
     py3-pip \
-    git  <-- ADDED GIT HERE
+    git
 
 # Install Blinko and its dependencies, forcing installation past PEP 668 protection
 RUN pip3 install --break-system-packages \
