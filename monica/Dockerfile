@@ -23,7 +23,8 @@ RUN apk add --no-cache \
     mariadb-client \
     git \
     jq \
-    bash && \
+    bash \
+    curl && \
     ln -sf /usr/bin/php83 /usr/bin/php
 
 WORKDIR /app
