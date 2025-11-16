@@ -44,6 +44,7 @@ RUN php83 /usr/local/bin/composer install --no-dev --no-interaction
 RUN npm install && npm run build
 
 COPY nginx.conf /etc/nginx/http.d/default.conf
+COPY php-fpm.conf /etc/php83/php-fpm.d/www.conf
 COPY run.sh /run.sh
 RUN chmod +x /run.sh
 
