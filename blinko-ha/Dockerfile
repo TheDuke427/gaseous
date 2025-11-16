@@ -37,7 +37,7 @@ WORKDIR /app
 COPY run.sh /
 
 # 9. Expose the port
-EXPOZE 8099
+EXPOSE 8099
 
 # 10. Set the entry point to execute the run script
 CMD [ "/run.sh" ]
