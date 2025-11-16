@@ -1,33 +1,22 @@
 #!/usr/bin/env bash
 set -e
 
-echo "Starting Blinko..."
+# Configuration for Home Assistant Add-on
+BLINKSCRIPT_CONFIG_FILE=$(jq --raw-output ".BLINKSCRIPT_CONFIG_FILE" /data/options.json)
+BLINKSCRIPT_MEDIA_DIR=$(jq --raw-output ".BLINKSCRIPT_MEDIA_DIR" /data/options.json)
 
-# Get ingress entry (this is provided by Home Assistant)
-if [ -n "$SUPERVISOR_TOKEN" ]; then
-    INGRESS_ENTRY=$(curl -s -H "Authorization: Bearer ${SUPERVISOR_TOKEN}" \
-        http://supervisor/addons/self/info | jq -r '.data.ingress_entry // ""')
-    
-    if [ -n "$INGRESS_ENTRY" ]; then
-        export NEXTAUTH_URL="http://homeassistant.local:8123${INGRESS_ENTRY}"
-        export NEXT_PUBLIC_BASE_URL="http://homeassistant.local:8123${INGRESS_ENTRY}"
-        echo "Using Ingress URL: ${NEXTAUTH_URL}"
-    fi
-fi
+# Create necessary directories
+mkdir -p "$(dirname "${BLINKSCRIPT_CONFIG_FILE}")"
+mkdir -p "${BLINKSCRIPT_MEDIA_DIR}"
 
-# Read options from config
-if [ -f /data/options.json ]; then
-    export NEXTAUTH_SECRET=$(jq -r '.nextauth_secret // ""' /data/options.json)
-    export DATABASE_URL=$(jq -r '.database_url // ""' /data/options.json)
-fi
+# Export environment variables for the Blinko script
+export BLINKSCRIPT_CONFIG_FILE
+export BLINKSCRIPT_MEDIA_DIR
 
-# Default values if not set
-export NODE_ENV="${NODE_ENV:-production}"
-export NEXTAUTH_URL="${NEXTAUTH_URL:-http://localhost:1111}"
-export NEXT_PUBLIC_BASE_URL="${NEXT_PUBLIC_BASE_URL:-http://localhost:1111}"
+# IMPORTANT: Gunicorn is used to serve the Blinko Flask app on the required Ingress port (8099)
+echo "Starting Blinko web interface with Gunicorn on port 8099..."
 
-echo "Configuration loaded. Starting application..."
-
-# Start the Blinko application
-# Check what command the base image uses
-exec node server.js || exec npm start || exec /docker-entrypoint.sh
+# The Blinko application is assumed to be a Flask app accessible via 'blinko_server:app'
+# Based on the Blinko repository structure, the main Flask app is defined in blinko/blinko_server.py
+# We use Gunicorn to serve this application.
+exec gunicorn --bind 0.0.0.0:8099 "blinko_server:app"
