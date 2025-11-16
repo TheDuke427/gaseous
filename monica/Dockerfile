@@ -25,9 +25,16 @@ WORKDIR /app
 # Clone Monica
 RUN git clone --depth 1 https://github.com/monicahq/monica.git /app
 
-# Copy run script to the s6-overlay services directory
+# Create s6 service directory
+RUN mkdir -p /etc/services.d/monica
+
+# Copy run script
 COPY run.sh /etc/services.d/monica/run
 RUN chmod +x /etc/services.d/monica/run
+
+# Create finish script
+RUN echo -e '#!/usr/bin/execlineb -S0\n/bin/true' > /etc/services.d/monica/finish && \
+    chmod +x /etc/services.d/monica/finish
 
 # Expose port
 EXPOSE 8181
