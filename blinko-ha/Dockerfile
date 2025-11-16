@@ -1,38 +1,35 @@
 ARG BUILD_FROM
 FROM ${BUILD_FROM}
 
-# Install necessary system packages (python3, pip, and GIT)
+# 1. Install necessary system packages: git, Node.js, and npm
 RUN apk add --no-cache \
-    python3 \
-    py3-pip \
-    git
+    git \
+    nodejs \
+    npm
 
-# Define the application directory
+# 2. Define the application directory and clone the source code
 WORKDIR /app
-
-# Clone the Blinko repository directly into the app directory
 RUN git clone https://github.com/blinkospace/blinko.git /app/blinko
 
-# *** NEW STEP: List contents of the root and nested directory to debug the file path ***
-RUN ls -R /app/blinko
+# 3. Set the working directory to the project root
+WORKDIR /app/blinko
 
-# Change the working directory to the *most likely* source folder.
-WORKDIR /app/blinko/blinko
+# 4. Install the build dependencies using npm (The project uses "turbo" to manage its monorepo structure)
+# This step may take some time as it installs all Node.js dependencies.
+RUN npm install turbo
 
-# Install dependencies from the requirements file.
-# We are currently attempting the assumption that the file is here:
-RUN pip3 install --break-system-packages -r requirements-app.txt \
-    gunicorn \
-    python-dotenv
+# 5. Run the project's installation script
+# This script is located at the root and should handle compiling and setting up the server.
+RUN sh install.sh
 
-# Set the final working directory for the ADD-ON execution (where run.sh expects files)
+# 6. Set the final working directory for the ADD-ON execution
 WORKDIR /app
 
-# Copy the run script
+# 7. Copy the run script (This script must now execute a Node.js/TypeScript server)
 COPY run.sh /
 
-# Expose the port for the web interface (required for Ingress)
+# 8. Expose the port
 EXPOSE 8099
 
-# Set the entry point to execute the run script
+# 9. Set the entry point to execute the run script
 CMD [ "/run.sh" ]
