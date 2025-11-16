@@ -1,6 +1,5 @@
 ARG BUILD_FROM=ghcr.io/home-assistant/amd64-base:latest
 FROM $BUILD_FROM
-
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 
 # Install dependencies
@@ -26,12 +25,9 @@ WORKDIR /app
 # Clone Monica
 RUN git clone --depth 1 https://github.com/monicahq/monica.git /app
 
-# Copy run script
-COPY run.sh /run.sh
-RUN chmod +x /run.sh
+# Copy run script to the s6-overlay services directory
+COPY run.sh /etc/services.d/monica/run
+RUN chmod +x /etc/services.d/monica/run
 
 # Expose port
 EXPOSE 8181
-
-# Application startup
-CMD ["/run.sh"]
