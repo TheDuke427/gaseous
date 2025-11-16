@@ -14,10 +14,9 @@ RUN git clone https://github.com/blinkospace/blinko.git /app/blinko
 # 3. Set the working directory to the project root
 WORKDIR /app/blinko
 
-# 4. Install ALL dependencies, forcing acceptance of dependency conflicts.
-# The 'npm install' command will install all packages listed in the root package.json, 
-# including turbo and the dependencies for the 'app' and 'server' workspaces.
-RUN npm install --legacy-peer-deps
+# 4. Install ALL dependencies, forcing acceptance of dependency conflicts, AND omitting optional packages
+# that contain platform-specific binaries (like the failing libsql one).
+RUN npm install --legacy-peer-deps --omit=optional
 
 # 5. Run the project's installation script
 # This script likely compiles the frontend and backend.
