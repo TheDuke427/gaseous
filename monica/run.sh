@@ -16,7 +16,8 @@ done
 
 cd /app
 
-chmod -R 775 storage bootstrap/cache
+chmod -R 777 storage bootstrap/cache
+chown -R nobody:nobody storage bootstrap/cache
 
 export DB_CONNECTION=mysql
 export DB_HOST="$DB_HOST"
@@ -35,13 +36,26 @@ php83 artisan migrate --force
 
 mysql -h"$DB_HOST" -P"$DB_PORT" -u"$DB_USER" -p"$DB_PASSWORD" "$DB_DATABASE" -e "UPDATE users SET email_verified_at = NOW() WHERE email_verified_at IS NULL;"
 
-php83 artisan config:cache
-php83 artisan route:cache
+php83 artisan config:clear
+php83 artisan route:clear
 
 echo "Starting PHP-FPM..."
 php-fpm83 -F -R &
+PHP_FPM_PID=$!
 
-sleep 2
+sleep 3
+
+echo "Checking PHP-FPM status..."
+if ps -p $PHP_FPM_PID > /dev/null; then
+    echo "PHP-FPM is running (PID: $PHP_FPM_PID)"
+else
+    echo "PHP-FPM failed to start!"
+    exit 1
+fi
+
+echo "Testing PHP-FPM connection..."
+timeout 2 bash -c 'cat < /dev/null > /dev/tcp/127.0.0.1/9000' && echo "PHP-FPM port 9000 is open" || echo "Cannot connect to PHP-FPM on port 9000"
 
 echo "Starting nginx..."
+nginx -t
 exec nginx -g 'daemon off;'
