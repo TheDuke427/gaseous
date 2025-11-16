@@ -18,19 +18,25 @@ cd /app
 
 chmod -R 777 storage bootstrap/cache
 
-export DB_CONNECTION=mysql
-export DB_HOST="$DB_HOST"
-export DB_PORT="$DB_PORT"
-export DB_DATABASE="$DB_DATABASE"
-export DB_USERNAME="$DB_USER"
-export DB_PASSWORD="$DB_PASSWORD"
-export APP_ENV=production
-export APP_DEBUG=true
-export APP_KEY=base64:$(openssl rand -base64 32)
-export APP_URL=http://localhost:8181
-export MAIL_MAILER=log
-export MAIL_VERIFY_EMAIL=false
-export APP_DISABLE_SIGNUP=false
+# Create .env file for Laravel
+cat > /app/.env <<EOF
+APP_NAME=Monica
+APP_ENV=production
+APP_KEY=base64:$(openssl rand -base64 32)
+APP_DEBUG=true
+APP_URL=http://localhost:8181
+
+DB_CONNECTION=mysql
+DB_HOST=$DB_HOST
+DB_PORT=$DB_PORT
+DB_DATABASE=$DB_DATABASE
+DB_USERNAME=$DB_USER
+DB_PASSWORD=$DB_PASSWORD
+
+MAIL_MAILER=log
+MAIL_VERIFY_EMAIL=false
+APP_DISABLE_SIGNUP=false
+EOF
 
 php83 artisan migrate --force
 
@@ -52,7 +58,6 @@ else
     echo "PHP-FPM not found in process list"
 fi
 
-# Tail Laravel logs in background
 touch /app/storage/logs/laravel.log
 tail -f /app/storage/logs/laravel.log &
 
