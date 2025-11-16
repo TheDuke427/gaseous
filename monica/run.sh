@@ -52,5 +52,9 @@ else
     echo "PHP-FPM not found in process list"
 fi
 
+# Tail Laravel logs in background
+touch /app/storage/logs/laravel.log
+tail -f /app/storage/logs/laravel.log &
+
 echo "Starting nginx..."
 exec nginx -g 'daemon off;'
