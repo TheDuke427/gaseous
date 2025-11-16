@@ -2,7 +2,6 @@ ARG BUILD_FROM
 FROM ${BUILD_FROM}
 
 # Install necessary system packages (python3, pip, and GIT)
-# This uses the Home Assistant base image's package manager (apk)
 RUN apk add --no-cache \
     python3 \
     py3-pip \
@@ -14,20 +13,19 @@ WORKDIR /app
 # Clone the Blinko repository directly into the app directory
 RUN git clone https://github.com/blinkospace/blinko.git /app/blinko
 
-# Change into the cloned directory to access the requirements file
+# Change into the cloned directory to set the context for the next command
 WORKDIR /app/blinko
 
-# Install dependencies from the requirements-app.txt file (the correct filename),
-# plus gunicorn and python-dotenv for running the Flask server and handling environment variables.
-# --break-system-packages is used to override PEP 668 and install into the container's environment.
-RUN pip3 install --break-system-packages -r requirements-app.txt \
+# Install dependencies from the requirements file located inside the 'blinko' subdirectory,
+# plus gunicorn and python-dotenv.
+RUN pip3 install --break-system-packages -r blinko/requirements-app.txt \
     gunicorn \
     python-dotenv
 
-# Set the final working directory to the application's root folder
+# Set the final working directory for the ADD-ON execution
 WORKDIR /app
 
-# Copy the run script
+# Copy the run script (this script handles changing to the /app/blinko folder for execution)
 COPY run.sh /
 
 # Expose the port for the web interface (required for Ingress)
