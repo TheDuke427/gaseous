@@ -25,7 +25,9 @@ RUN apk add --no-cache \
     jq \
     bash \
     curl \
-    openssl && \
+    openssl \
+    nodejs \
+    npm && \
     ln -sf /usr/bin/php83 /usr/bin/php
 
 WORKDIR /app
@@ -35,6 +37,9 @@ RUN git clone --depth 1 https://github.com/monicahq/monica.git /app
 RUN curl -sS https://getcomposer.org/installer | php83 -- --install-dir=/usr/local/bin --filename=composer
 
 RUN php83 /usr/local/bin/composer install --no-dev --no-interaction
+
+# Build frontend assets
+RUN npm install && npm run build
 
 COPY run.sh /run.sh
 RUN chmod +x /run.sh
