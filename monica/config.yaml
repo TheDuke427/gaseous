@@ -1,0 +1,56 @@
+name: Monica Personal CRM
+version: "4.1.2"
+slug: monica
+description: Personal Relationship Management - Remember everything about your friends, family and business relationships
+url: https://github.com/TheDuke427/gaseous/tree/main/monica
+arch:
+  - armhf
+  - armv7
+  - aarch64
+  - amd64
+  - i386
+init: false
+hassio_api: true
+hassio_role: default
+homeassistant_api: false
+auth_api: false
+ingress: true
+ingress_port: 80
+panel_icon: mdi:account-heart
+ports:
+  80/tcp: null
+ports_description:
+  80/tcp: Web interface (Not required for Ingress)
+options:
+  db_host: core-mariadb
+  db_port: 3306
+  db_name: monica
+  db_user: monica
+  db_password: ""
+  app_env: production
+  app_disable_signup: true
+  mail_mailer: log
+  mail_host: ""
+  mail_port: 587
+  mail_username: ""
+  mail_password: ""
+  mail_encryption: tls
+  mail_from_address: ""
+  mail_from_name: Monica
+schema:
+  db_host: str
+  db_port: port
+  db_name: str
+  db_user: str
+  db_password: password
+  app_env: list(local|production)
+  app_disable_signup: bool
+  mail_mailer: list(log|smtp|sendmail)
+  mail_host: str?
+  mail_port: port?
+  mail_username: str?
+  mail_password: password?
+  mail_encryption: list(tls|ssl|null)?
+  mail_from_address: email?
+  mail_from_name: str?
+image: ghcr.io/theduke427/monica-{arch}
