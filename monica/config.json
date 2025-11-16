@@ -4,7 +4,7 @@
   "slug": "monica",
   "description": "Self-hosted personal CRM for Home Assistant",
   "arch": ["amd64", "armv7", "aarch64"],
-  "startup": "services",
+  "startup": "application",
   "boot": "auto",
   "host_network": false,
   "homeassistant": "false",
