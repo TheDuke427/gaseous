@@ -1,0 +1,5 @@
+Note: For a production add-on, you'll need to create an actual icon.png file (512x512 PNG).
+You can:
+1. Use the Blinko project logo
+2. Create a custom icon with note/pencil imagery
+3. Use a design tool like GIMP, Photoshop, or Canva

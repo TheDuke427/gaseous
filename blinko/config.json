@@ -1,0 +1,31 @@
+{
+  "name": "Blinko",
+  "version": "1.0.0",
+  "slug": "blinko",
+  "description": "AI-powered note-taking tool for capturing and organizing fleeting thoughts",
+  "url": "https://github.com/blinkospace/blinko",
+  "arch": ["aarch64", "amd64", "armhf", "armv7", "i386"],
+  "startup": "services",
+  "boot": "auto",
+  "init": false,
+  "ingress": true,
+  "ingress_port": 1111,
+  "panel_icon": "mdi:notebook-edit",
+  "ports": {
+    "1111/tcp": null
+  },
+  "ports_description": {
+    "1111/tcp": "Blinko web interface (not needed when using Ingress)"
+  },
+  "options": {
+    "postgres_password": "changeme_postgres_password",
+    "nextauth_secret": "changeme_nextauth_secret_min_32_chars",
+    "timezone": "America/New_York"
+  },
+  "schema": {
+    "postgres_password": "password",
+    "nextauth_secret": "password",
+    "timezone": "str"
+  },
+  "image": "ghcr.io/{arch}-addon-blinko"
+}
