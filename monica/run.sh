@@ -28,9 +28,15 @@ export DB_PASSWORD="$DB_PASSWORD"
 export APP_ENV=production
 export APP_KEY=base64:$(openssl rand -base64 32)
 export APP_URL=http://localhost:8181
-export APP_DEBUG=true
+export MAIL_MAILER=log
+export MAIL_VERIFY_EMAIL=false
+export APP_DISABLE_SIGNUP=false
 
 php83 artisan migrate --force
+
+# Mark all users as verified
+mysql -h"$DB_HOST" -P"$DB_PORT" -u"$DB_USER" -p"$DB_PASSWORD" "$DB_DATABASE" -e "UPDATE users SET email_verified_at = NOW() WHERE email_verified_at IS NULL;"
+
 php83 artisan config:cache
 php83 artisan route:cache
 
