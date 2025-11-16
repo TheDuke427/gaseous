@@ -16,6 +16,9 @@ done
 
 cd /app
 
+# Set proper permissions for Laravel
+chmod -R 775 storage bootstrap/cache
+
 export DB_CONNECTION=mysql
 export DB_HOST="$DB_HOST"
 export DB_PORT="$DB_PORT"
@@ -25,8 +28,11 @@ export DB_PASSWORD="$DB_PASSWORD"
 export APP_ENV=production
 export APP_KEY=base64:$(openssl rand -base64 32)
 export APP_URL=http://localhost:8181
+export APP_DEBUG=true
 
 php83 artisan migrate --force
+php83 artisan config:cache
+php83 artisan route:cache
 
 echo "Starting Monica..."
 exec php83 -S 0.0.0.0:8181 -t public
