@@ -11,8 +11,8 @@ RUN apk add --no-cache \
 # This assumes the 'blinko' package is installable. 
 # Alternatively, you could clone the repo and copy the files, but pip is cleaner.
 
-# Install Blinko and its dependencies
-RUN pip3 install \
+# Install Blinko and its dependencies, forcing installation past PEP 668 protection
+RUN pip3 install --break-system-packages \
     git+https://github.com/blinkospace/blinko.git@main \
     gunicorn \
     python-dotenv
