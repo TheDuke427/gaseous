@@ -1,0 +1,44 @@
+{
+  "name": "Blinko",
+  "version": "1.0.0",
+  "slug": "blinko-ha",
+  "description": "Blinko - AI-powered personal notes (runs via blinkospace/blinko docker image). Ingress-enabled.",
+  "arch": ["amd64", "armv7", "arm64"],
+  "startup": "services",
+  "boot": "auto",
+  "host_network": false,
+
+  "ingress": true,
+  "ingress_port": 1111,
+
+  "ports": {},
+
+  "options": {
+    "NODE_ENV": "production",
+    "NEXTAUTH_URL": "http://homeassistant.local:8123",
+    "NEXT_PUBLIC_BASE_URL": "http://homeassistant.local:8123",
+    "NEXTAUTH_SECRET": "",
+    "DATABASE_URL": "postgresql://postgres:password@<db-host>:5432/postgres",
+    "PUID": 1000,
+    "PGID": 1000,
+    "TZ": "UTC"
+  },
+
+  "schema": {
+    "NEXTAUTH_SECRET": "str",
+    "DATABASE_URL": "str",
+    "NEXT_PUBLIC_BASE_URL": "str",
+    "NODE_ENV": "str",
+    "PUID": "int",
+    "PGID": "int",
+    "TZ": "str"
+  },
+
+  "map": [
+    { "map": "config", "to": "/app/.blinko" },
+    { "map": "data", "to": "/data" }
+  ],
+
+  "homeassistant_api": true,
+  "ports_description": {}
+}
