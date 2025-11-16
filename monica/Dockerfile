@@ -1,34 +1,36 @@
-ARG BUILD_FROM
+# Use official Home Assistant base image
+ARG BUILD_FROM=ghcr.io/home-assistant/amd64-base:latest
 FROM $BUILD_FROM
 
-# Install required packages (PHP, composer, etc.)
+# Install PHP 8.2 + required extensions
 RUN apk add --no-cache \
-    php81 \
-    php81-phar \
-    php81-mbstring \
-    php81-openssl \
-    php81-pdo \
-    php81-pdo_mysql \
-    php81-tokenizer \
-    php81-json \
-    php81-xml \
-    php81-curl \
-    php81-session \
-    php81-ctype \
-    php81-dom \
+    php8 \
+    php8-phar \
+    php8-mbstring \
+    php8-openssl \
+    php8-pdo \
+    php8-pdo_mysql \
+    php8-tokenizer \
+    php8-json \
+    php8-xml \
+    php8-curl \
+    php8-session \
+    php8-ctype \
+    php8-dom \
     mysql-client \
     git \
     unzip \
-    curl
+    curl \
+    bash
 
 # Install Composer
-RUN curl -sS https://getcomposer.org/installer | php81 \
+RUN curl -sS https://getcomposer.org/installer | php \
     && mv composer.phar /usr/local/bin/composer
 
 # Create app directory
 WORKDIR /opt/monica
 
-# Copy Monica source code
+# Copy Monica source code (or mount externally)
 COPY . /opt/monica
 
 # Install PHP dependencies
@@ -38,7 +40,7 @@ RUN composer install --no-dev --optimize-autoloader
 COPY run.sh /run.sh
 RUN chmod +x /run.sh
 
-# Expose new Monica port
+# Expose Monica port
 EXPOSE 8181
 
 CMD [ "/run.sh" ]
