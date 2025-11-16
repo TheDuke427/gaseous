@@ -25,6 +25,7 @@ export DB_DATABASE="$DB_DATABASE"
 export DB_USERNAME="$DB_USER"
 export DB_PASSWORD="$DB_PASSWORD"
 export APP_ENV=production
+export APP_DEBUG=true
 export APP_KEY=base64:$(openssl rand -base64 32)
 export APP_URL=http://localhost:8181
 export MAIL_MAILER=log
@@ -37,6 +38,7 @@ mysql -h"$DB_HOST" -P"$DB_PORT" -u"$DB_USER" -p"$DB_PASSWORD" "$DB_DATABASE" -e 
 
 php83 artisan config:clear
 php83 artisan route:clear
+php83 artisan view:clear
 
 echo "Starting PHP-FPM..."
 php-fpm83 -F -R 2>&1 &
@@ -50,9 +52,5 @@ else
     echo "PHP-FPM not found in process list"
 fi
 
-echo "Checking port 9000..."
-netstat -ln | grep 9000 || echo "Port 9000 not listening"
-
 echo "Starting nginx..."
-nginx -t
 exec nginx -g 'daemon off;'
