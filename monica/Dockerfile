@@ -13,6 +13,10 @@ RUN apk add --no-cache \
     php82-xml \
     php82-opcache \
     php82-session \
+    php82-dom \
+    php82-fileinfo \
+    php82-intl \
+    php82-bcmath \
     mariadb-client \
     composer \
     git
