@@ -1,30 +1,34 @@
-#!/bin/sh
+#!/usr/bin/execlineb -P
+with-contenv
+s6-setuidgid abc
+/bin/sh -c "
 CONFIG_PATH=/data/options.json
 
-DB_HOST=$(jq -r '.db_host' $CONFIG_PATH)
-DB_PORT=$(jq -r '.db_port' $CONFIG_PATH)
-DB_DATABASE=$(jq -r '.db_database' $CONFIG_PATH)
-DB_USER=$(jq -r '.db_user' $CONFIG_PATH)
-DB_PASSWORD=$(jq -r '.db_password' $CONFIG_PATH)
+DB_HOST=\$(jq -r '.db_host' \$CONFIG_PATH)
+DB_PORT=\$(jq -r '.db_port' \$CONFIG_PATH)
+DB_DATABASE=\$(jq -r '.db_database' \$CONFIG_PATH)
+DB_USER=\$(jq -r '.db_user' \$CONFIG_PATH)
+DB_PASSWORD=\$(jq -r '.db_password' \$CONFIG_PATH)
 
-echo "Waiting for database..."
-while ! mysql -h"$DB_HOST" -P"$DB_PORT" -u"$DB_USER" -p"$DB_PASSWORD" -e "SELECT 1" 2>/dev/null; do
+echo 'Waiting for database...'
+while ! mysql -h\"\$DB_HOST\" -P\"\$DB_PORT\" -u\"\$DB_USER\" -p\"\$DB_PASSWORD\" -e 'SELECT 1' 2>/dev/null; do
     sleep 2
 done
 
 cd /app
 
 export DB_CONNECTION=mysql
-export DB_HOST="$DB_HOST"
-export DB_PORT="$DB_PORT"
-export DB_DATABASE="$DB_DATABASE"
-export DB_USERNAME="$DB_USER"
-export DB_PASSWORD="$DB_PASSWORD"
+export DB_HOST=\"\$DB_HOST\"
+export DB_PORT=\"\$DB_PORT\"
+export DB_DATABASE=\"\$DB_DATABASE\"
+export DB_USERNAME=\"\$DB_USER\"
+export DB_PASSWORD=\"\$DB_PASSWORD\"
 export APP_ENV=production
-export APP_KEY=base64:$(openssl rand -base64 32)
+export APP_KEY=base64:\$(openssl rand -base64 32)
 export APP_URL=http://localhost:8181
 
 php83 artisan migrate --force
 
-echo "Starting Monica..."
-php83 -S 0.0.0.0:8181 -t public
+echo 'Starting Monica...'
+exec php83 -S 0.0.0.0:8181 -t public
+"
