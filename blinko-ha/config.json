@@ -1,7 +1,7 @@
 {
     "name": "Blinko (Blink Camera Monitor)",
     "version": "1.0.0",
-    "slug": "blinko",
+    "slug": "blinko-ha",
     "description": "A Home Assistant Add-on for Blinko, a Blink Camera Monitoring solution.",
     "arch": [
         "aarch64",
