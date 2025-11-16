@@ -18,6 +18,15 @@ cd /app
 
 chmod -R 775 storage bootstrap/cache
 
+# Detect ingress or direct access
+if [ -n "$INGRESS_PATH" ]; then
+    APP_URL="http://homeassistant.local:8123$INGRESS_PATH"
+    echo "Using ingress URL: $APP_URL"
+else
+    APP_URL="http://localhost:8181"
+    echo "Using direct URL: $APP_URL"
+fi
+
 export DB_CONNECTION=mysql
 export DB_HOST="$DB_HOST"
 export DB_PORT="$DB_PORT"
@@ -26,7 +35,7 @@ export DB_USERNAME="$DB_USER"
 export DB_PASSWORD="$DB_PASSWORD"
 export APP_ENV=production
 export APP_KEY=base64:$(openssl rand -base64 32)
-export APP_URL=http://localhost:8181
+export APP_URL="$APP_URL"
 export MAIL_MAILER=log
 export MAIL_VERIFY_EMAIL=false
 export APP_DISABLE_SIGNUP=false
@@ -40,6 +49,5 @@ php83 artisan route:cache
 
 echo "Starting Monica on port 8181..."
 echo "Database: $DB_HOST:$DB_PORT/$DB_DATABASE"
-echo "Access Monica at: http://192.168.86.32:8181"
 
 exec php83 -S 0.0.0.0:8181 -t public
