@@ -18,18 +18,13 @@ cd /app
 
 chmod -R 777 storage bootstrap/cache
 
-# Debug: Print all environment variables
-echo "=== Environment Variables ==="
-env | grep -i ingress || echo "No ingress vars found"
-echo "==========================="
-
-# Create .env file for Laravel
+# Create .env file for Laravel with HTTPS
 cat > /app/.env <<EOF
 APP_NAME=Monica
 APP_ENV=production
 APP_KEY=base64:$(openssl rand -base64 32)
 APP_DEBUG=true
-APP_URL=http://localhost:8181
+APP_URL=https://stotlandyard.xyz
 
 DB_CONNECTION=mysql
 DB_HOST=$DB_HOST
@@ -42,6 +37,7 @@ MAIL_MAILER=log
 MAIL_VERIFY_EMAIL=false
 APP_DISABLE_SIGNUP=false
 TRUSTED_PROXIES=*
+FORCE_HTTPS=true
 EOF
 
 php83 artisan migrate --force
