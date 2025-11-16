@@ -1,5 +1,4 @@
-ARG BUILD_FROM=ghcr.io/home-assistant/amd64-base:latest
-FROM $BUILD_FROM
+FROM alpine:3.20
 
 RUN apk add --no-cache \
     php83 \
@@ -22,7 +21,9 @@ RUN apk add --no-cache \
     php83-xmlwriter \
     php83-simplexml \
     mariadb-client \
-    git && \
+    git \
+    jq \
+    bash && \
     ln -sf /usr/bin/php83 /usr/bin/php
 
 WORKDIR /app
@@ -33,7 +34,9 @@ RUN curl -sS https://getcomposer.org/installer | php83 -- --install-dir=/usr/loc
 
 RUN php83 /usr/local/bin/composer install --no-dev --no-interaction
 
-COPY run.sh /etc/s6-overlay/s6-rc.d/monica/run
-RUN chmod +x /etc/s6-overlay/s6-rc.d/monica/run && \
-    echo "longrun" > /etc/s6-overlay/s6-rc.d/monica/type && \
-    echo "monica" > /etc/s6-overlay/s6-rc.d/user/contents.d/monica
+COPY run.sh /run.sh
+RUN chmod +x /run.sh
+
+EXPOSE 8181
+
+CMD ["/run.sh"]
