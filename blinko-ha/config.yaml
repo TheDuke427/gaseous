@@ -1,6 +1,6 @@
 name: Blinko
 version: "1.0.0"
-slug: blinko
+slug: blinko-ha
 description: "Blinko - AI-powered personal notes (runs via blinkospace/blinko docker image). Ingress-enabled."
 arch:
   - amd64
