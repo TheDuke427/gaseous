@@ -14,18 +14,19 @@ RUN git clone https://github.com/blinkospace/blinko.git /app/blinko
 # 3. Set the working directory to the project root
 WORKDIR /app/blinko
 
-# 4. Install the build dependencies using npm (The project uses "turbo" to manage its monorepo structure)
-# This step may take some time as it installs all Node.js dependencies.
-RUN npm install turbo
+# 4. Install ALL dependencies, forcing acceptance of dependency conflicts.
+# The 'npm install' command will install all packages listed in the root package.json, 
+# including turbo and the dependencies for the 'app' and 'server' workspaces.
+RUN npm install --legacy-peer-deps
 
 # 5. Run the project's installation script
-# This script is located at the root and should handle compiling and setting up the server.
+# This script likely compiles the frontend and backend.
 RUN sh install.sh
 
 # 6. Set the final working directory for the ADD-ON execution
 WORKDIR /app
 
-# 7. Copy the run script (This script must now execute a Node.js/TypeScript server)
+# 7. Copy the run script
 COPY run.sh /
 
 # 8. Expose the port
