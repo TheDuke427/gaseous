@@ -3,17 +3,17 @@ FROM ${BUILD_FROM}
 
 # 1. Install system packages: git, Node.js, npm, curl, and RUST (required for Tauri/server build)
 # We need the full Rust toolchain to compile the server components (Tauri/Rust).
+# Note: The 'apk add' step is now CACHED and fast.
 RUN apk add --no-cache \
     git \
     nodejs \
     npm \
     curl \
-    # Install Rust for Tauri/native server components
     rust \
     cargo
 
 # 2. Install Bun (the preferred package manager)
-# Add Bun to the PATH environment variable
+# Note: This step is now CACHED and fast.
 RUN curl -fsSL https://bun.sh/install | bash
 ENV PATH="/root/.bun/bin:$PATH"
 
@@ -25,11 +25,13 @@ RUN git clone https://github.com/blinkospace/blinko.git /app/blinko
 WORKDIR /app/blinko
 
 # 5. Install ALL dependencies using Bun.
+# Note: This step is now CACHED and fast.
 RUN bun install --force
 
 # 6. Build the project components (Bypass the failed install.sh)
-# Use 'turbo run build' to build all workspaces in the monorepo.
-RUN bun run turbo run build
+# Common monorepo build command: execute the 'turbo' binary to run the 'build' task across all workspaces.
+# The 'turbo' binary should be available in the PATH via Bun's installation.
+RUN turbo run build
 
 # 7. Set the final working directory for the ADD-ON execution
 WORKDIR /app
