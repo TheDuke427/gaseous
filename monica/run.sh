@@ -18,13 +18,25 @@ cd /app
 
 chmod -R 777 storage bootstrap/cache
 
+# Detect if running under ingress
+INGRESS_ENTRY="${INGRESS_ENTRY:-}"
+if [ -n "$INGRESS_ENTRY" ]; then
+    echo "Detected ingress path: $INGRESS_ENTRY"
+    APP_URL="http://homeassistant.local:8123${INGRESS_ENTRY}"
+    ASSET_URL="${INGRESS_ENTRY}"
+else
+    APP_URL="http://localhost:8181"
+    ASSET_URL=""
+fi
+
 # Create .env file for Laravel
 cat > /app/.env <<EOF
 APP_NAME=Monica
 APP_ENV=production
 APP_KEY=base64:$(openssl rand -base64 32)
 APP_DEBUG=true
-APP_URL=http://localhost:8181
+APP_URL=$APP_URL
+ASSET_URL=$ASSET_URL
 
 DB_CONNECTION=mysql
 DB_HOST=$DB_HOST
@@ -36,6 +48,9 @@ DB_PASSWORD=$DB_PASSWORD
 MAIL_MAILER=log
 MAIL_VERIFY_EMAIL=false
 APP_DISABLE_SIGNUP=false
+
+# Trust ingress proxy
+TRUSTED_PROXIES=*
 EOF
 
 php83 artisan migrate --force
@@ -62,4 +77,5 @@ touch /app/storage/logs/laravel.log
 tail -f /app/storage/logs/laravel.log &
 
 echo "Starting nginx..."
+echo "App URL: $APP_URL"
 exec nginx -g 'daemon off;'
