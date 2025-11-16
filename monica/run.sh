@@ -38,10 +38,10 @@ mysql -h"$DB_HOST" -P"$DB_PORT" -u"$DB_USER" -p"$DB_PASSWORD" "$DB_DATABASE" -e 
 php83 artisan config:cache
 php83 artisan route:cache
 
-echo "Starting PHP-FPM on 127.0.0.1:9000..."
-php-fpm83 -F -R -y /dev/null -d listen=127.0.0.1:9000 -d pm=dynamic -d pm.max_children=5 -d pm.start_servers=2 -d pm.min_spare_servers=1 -d pm.max_spare_servers=3 &
+echo "Starting PHP-FPM..."
+php-fpm83 -F -R &
 
 sleep 2
 
-echo "Starting nginx on port 8181..."
+echo "Starting nginx..."
 exec nginx -g 'daemon off;'
