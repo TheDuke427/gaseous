@@ -25,7 +25,7 @@ export APP_ENV=production
 export APP_KEY=base64:$(openssl rand -base64 32)
 export APP_URL=http://localhost:8181
 
-php82 artisan migrate --force
+php83 artisan migrate --force
 
 bashio::log.info "Starting Monica..."
-exec php82 -S 0.0.0.0:8181 -t public
+exec php83 -S 0.0.0.0:8181 -t public
