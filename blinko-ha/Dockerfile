@@ -1,15 +1,11 @@
 ARG BUILD_FROM
 FROM ${BUILD_FROM}
 
-# Install necessary system packages
+# Install necessary system packages (python3, pip, and GIT)
 RUN apk add --no-cache \
     python3 \
-    py3-pip
-
-# Copy the Blinko application source code
-# Note: Since the Blinko repo is a Python package, we install it using pip directly
-# This assumes the 'blinko' package is installable. 
-# Alternatively, you could clone the repo and copy the files, but pip is cleaner.
+    py3-pip \
+    git  <-- ADDED GIT HERE
 
 # Install Blinko and its dependencies, forcing installation past PEP 668 protection
 RUN pip3 install --break-system-packages \
