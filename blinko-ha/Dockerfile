@@ -13,16 +13,15 @@ WORKDIR /app
 # Clone the Blinko repository directly into the app directory
 RUN git clone https://github.com/blinkospace/blinko.git /app/blinko
 
-# Change into the cloned directory to set the context for the next command
-WORKDIR /app/blinko
+# Change the working directory to the actual source folder where requirements-app.txt resides.
+WORKDIR /app/blinko/blinko
 
 # Install dependencies from the requirements file.
-# The file is named 'requirements-app.txt' and is assumed to be in the current directory (/app/blinko).
 RUN pip3 install --break-system-packages -r requirements-app.txt \
     gunicorn \
     python-dotenv
 
-# Set the final working directory for the ADD-ON execution
+# Set the final working directory for the ADD-ON execution (where run.sh expects files)
 WORKDIR /app
 
 # Copy the run script (this script handles changing to the /app/blinko folder for execution)
