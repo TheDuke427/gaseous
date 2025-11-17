@@ -19,6 +19,7 @@ cd /app
 # Create persistent storage directory
 mkdir -p /share/monica/storage/app/public
 mkdir -p /share/monica/storage/photos
+mkdir -p /share/monica/storage/avatars
 
 # Link persistent storage
 rm -rf /app/storage/app/public
@@ -31,8 +32,8 @@ cat > /app/.env <<EOF
 APP_NAME=Monica
 APP_ENV=production
 APP_KEY=base64:$(openssl rand -base64 32)
-APP_DEBUG=false
-APP_URL=http://localhost:8181
+APP_DEBUG=true
+APP_URL=http://192.168.86.32:8181
 DB_CONNECTION=mysql
 DB_HOST=$DB_HOST
 DB_PORT=$DB_PORT
@@ -41,6 +42,9 @@ DB_USERNAME=$DB_USER
 DB_PASSWORD=$DB_PASSWORD
 MAIL_MAILER=log
 FILESYSTEM_DISK=local
+DEFAULT_MAX_UPLOAD_SIZE=10240000
+DEFAULT_MAX_STORAGE_SIZE=512000000
+ALLOW_AVATAR_UPLOADS=true
 EOF
 
 php83 artisan migrate --force
