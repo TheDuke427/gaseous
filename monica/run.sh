@@ -16,10 +16,11 @@ done
 
 cd /app
 
-# Check the Documents.vue file
-echo "=== Documents.vue content (around upload check) ==="
-grep -A 10 -B 10 "keys to manage" resources/js/Shared/Modules/Documents.vue 2>/dev/null || echo "Not found"
-echo "==================================================="
+# Search for where uploadcare data is set
+echo "=== Searching for uploadcare config ==="
+grep -r "uploadcare" app/ --include="*.php" | grep -i "publicKey\|public_key" | head -5
+grep -r "UPLOADCARE" . --include=".env.example" 2>/dev/null || echo "Not in .env.example"
+echo "========================================"
 
 chmod -R 777 storage bootstrap/cache
 
@@ -37,6 +38,10 @@ DB_USERNAME=$DB_USER
 DB_PASSWORD=$DB_PASSWORD
 MAIL_MAILER=log
 FILESYSTEM_DISK=public
+
+# Uploadcare keys (dummy values to enable uploads)
+UPLOADCARE_PUBLIC_KEY=demopublickey
+UPLOADCARE_PRIVATE_KEY=demoprivatekey
 EOF
 
 php83 artisan migrate --force
