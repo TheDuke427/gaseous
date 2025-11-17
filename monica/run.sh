@@ -15,48 +15,31 @@ while ! mysql -h"$DB_HOST" -P"$DB_PORT" -u"$DB_USER" -p"$DB_PASSWORD" -e "SELECT
 done
 
 cd /app
-
 chmod -R 777 storage bootstrap/cache
 
-# Create .env file for Laravel
 cat > /app/.env <<EOF
 APP_NAME=Monica
 APP_ENV=production
 APP_KEY=base64:$(openssl rand -base64 32)
 APP_DEBUG=false
 APP_URL=http://localhost:8181
-
 DB_CONNECTION=mysql
 DB_HOST=$DB_HOST
 DB_PORT=$DB_PORT
 DB_DATABASE=$DB_DATABASE
 DB_USERNAME=$DB_USER
 DB_PASSWORD=$DB_PASSWORD
-
 MAIL_MAILER=log
-MAIL_VERIFY_EMAIL=false
-APP_DISABLE_SIGNUP=false
 EOF
 
 php83 artisan migrate --force
-
 mysql -h"$DB_HOST" -P"$DB_PORT" -u"$DB_USER" -p"$DB_PASSWORD" "$DB_DATABASE" -e "UPDATE users SET email_verified_at = NOW() WHERE email_verified_at IS NULL;"
 
 php83 artisan config:clear
-php83 artisan route:clear
+php83 artisan route:clear  
 php83 artisan view:clear
 
-echo "Starting PHP-FPM..."
-php-fpm83 -F -R 2>&1 &
-
+php-fpm83 -F -R &
 sleep 3
 
-echo "Checking PHP-FPM..."
-if pgrep php-fpm83 > /dev/null; then
-    echo "PHP-FPM is running"
-else
-    echo "PHP-FPM not found in process list"
-fi
-
-echo "Starting nginx..."
 exec nginx -g 'daemon off;'
