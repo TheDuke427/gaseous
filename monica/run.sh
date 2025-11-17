@@ -16,10 +16,15 @@ done
 
 cd /app
 
-# Search for the upload keys check
-echo "=== Searching for upload keys message ==="
-find . -name "*.blade.php" -exec grep -l "keys to manage uploads" {} \; 2>/dev/null || echo "Not found"
-echo "=========================================="
+# Search in resources/lang for the translation
+echo "=== Searching in lang files ==="
+grep -r "keys to manage" resources/lang/ 2>/dev/null | head -5 || echo "Not in lang"
+echo "================================"
+
+# Check vault settings
+echo "=== Checking vault config table ==="
+php83 artisan tinker --execute="echo json_encode(\App\Models\Vault::first());" 2>/dev/null || echo "Can't access vault"
+echo "===================================="
 
 chmod -R 777 storage bootstrap/cache
 
