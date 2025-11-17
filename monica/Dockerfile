@@ -40,7 +40,6 @@ RUN curl -sS https://getcomposer.org/installer | php83 -- --install-dir=/usr/loc
 
 RUN php83 /usr/local/bin/composer install --no-dev --no-interaction
 
-# Build frontend assets
 RUN npm install && npm run build
 
 COPY nginx.conf /etc/nginx/http.d/default.conf
