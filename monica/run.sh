@@ -15,14 +15,20 @@ while ! mysql -h"$DB_HOST" -P"$DB_PORT" -u"$DB_USER" -p"$DB_PASSWORD" -e "SELECT
 done
 
 cd /app
+
+# Check Monica's filesystem config
+echo "=== Checking Monica filesystem config ==="
+cat config/filesystems.php | grep -A 20 "disks" || true
+echo "========================================="
+
 chmod -R 777 storage bootstrap/cache
 
 cat > /app/.env <<EOF
 APP_NAME=Monica
 APP_ENV=production
 APP_KEY=base64:$(openssl rand -base64 32)
-APP_DEBUG=false
-APP_URL=http://localhost:8181
+APP_DEBUG=true
+APP_URL=http://192.168.86.32:8181
 DB_CONNECTION=mysql
 DB_HOST=$DB_HOST
 DB_PORT=$DB_PORT
@@ -42,4 +48,5 @@ php83 artisan view:clear
 php-fpm83 -F -R &
 sleep 3
 
+echo "Monica ready at http://192.168.86.32:8181"
 exec nginx -g 'daemon off;'
