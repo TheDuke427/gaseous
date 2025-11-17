@@ -20,6 +20,7 @@ cd /app
 mkdir -p /share/monica/storage/app/public
 mkdir -p /share/monica/storage/photos
 mkdir -p /share/monica/storage/avatars
+mkdir -p /share/monica/storage/documents
 
 # Link persistent storage
 rm -rf /app/storage/app/public
@@ -44,11 +45,20 @@ DB_PASSWORD=$DB_PASSWORD
 
 MAIL_MAILER=log
 
-FILESYSTEM_DISK=public
-DEFAULT_FILESYSTEM_CLOUD=public
+# Local filesystem for uploads
+FILESYSTEM_DISK=local
+DEFAULT_FILESYSTEM_CLOUD=local
 
+# Upload limits
 DEFAULT_MAX_UPLOAD_SIZE=10485760
 DEFAULT_MAX_STORAGE_SIZE=536870912
+
+# Disable S3 requirement
+AWS_ACCESS_KEY_ID=
+AWS_SECRET_ACCESS_KEY=
+AWS_DEFAULT_REGION=us-east-1
+AWS_BUCKET=
+AWS_USE_PATH_STYLE_ENDPOINT=false
 EOF
 
 php83 artisan migrate --force
