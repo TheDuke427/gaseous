@@ -16,16 +16,10 @@ done
 
 cd /app
 
-# Search in resources for the upload message
-echo "=== Searching resources for upload message ==="
-find resources -name "*.vue" -o -name "*.jsx" -o -name "*.tsx" 2>/dev/null | xargs grep -l "keys to manage" 2>/dev/null || echo "Not found in Vue/React files"
-find resources -name "*.php" 2>/dev/null | xargs grep -l "keys to manage" 2>/dev/null || echo "Not found in PHP resources"
-echo "==============================================="
-
-# Check if there's a lang file with this text
-echo "=== Searching lang files ==="
-find lang -type f 2>/dev/null | xargs grep "keys to manage" 2>/dev/null || echo "Not in lang files"
-echo "============================="
+# Check the Documents.vue file
+echo "=== Documents.vue content (around upload check) ==="
+grep -A 10 -B 10 "keys to manage" resources/js/Shared/Modules/Documents.vue 2>/dev/null || echo "Not found"
+echo "==================================================="
 
 chmod -R 777 storage bootstrap/cache
 
