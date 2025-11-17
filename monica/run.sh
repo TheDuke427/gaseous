@@ -16,15 +16,22 @@ done
 
 cd /app
 
-# Search in resources/lang for the translation
-echo "=== Searching in lang files ==="
-grep -r "keys to manage" resources/lang/ 2>/dev/null | head -5 || echo "Not in lang"
+# Check what tables exist
+echo "=== Database Tables ==="
+mysql -h"$DB_HOST" -P"$DB_PORT" -u"$DB_USER" -p"$DB_PASSWORD" "$DB_DATABASE" -e "SHOW TABLES LIKE '%vault%';" 2>/dev/null || echo "Can't check tables"
+mysql -h"$DB_HOST" -P"$DB_PORT" -u"$DB_USER" -p"$DB_PASSWORD" "$DB_DATABASE" -e "SHOW TABLES LIKE '%file%';" 2>/dev/null || echo "Can't check tables"
+mysql -h"$DB_HOST" -P"$DB_PORT" -u"$DB_USER" -p"$DB_PASSWORD" "$DB_DATABASE" -e "SHOW TABLES LIKE '%upload%';" 2>/dev/null || echo "Can't check tables"
+echo "======================="
+
+# Check vault settings structure if exists
+echo "=== Vault Settings Structure ==="
+mysql -h"$DB_HOST" -P"$DB_PORT" -u"$DB_USER" -p"$DB_PASSWORD" "$DB_DATABASE" -e "DESCRIBE vault_settings;" 2>/dev/null || echo "vault_settings doesn't exist"
 echo "================================"
 
-# Check vault settings
-echo "=== Checking vault config table ==="
-php83 artisan tinker --execute="echo json_encode(\App\Models\Vault::first());" 2>/dev/null || echo "Can't access vault"
-echo "===================================="
+# Check current vault settings
+echo "=== Current Vault Settings ==="
+mysql -h"$DB_HOST" -P"$DB_PORT" -u"$DB_USER" -p"$DB_PASSWORD" "$DB_DATABASE" -e "SELECT * FROM vault_settings LIMIT 5;" 2>/dev/null || echo "Can't read vault_settings"
+echo "=============================="
 
 chmod -R 777 storage bootstrap/cache
 
