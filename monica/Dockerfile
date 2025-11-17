@@ -45,7 +45,6 @@ RUN npm install && npm run build
 
 COPY nginx.conf /etc/nginx/http.d/default.conf
 COPY php-fpm.conf /etc/php83/php-fpm.d/www.conf
-COPY TrustProxies.php /app/app/Http/Middleware/TrustProxies.php
 COPY run.sh /run.sh
 RUN chmod +x /run.sh
 
