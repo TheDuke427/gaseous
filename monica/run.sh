@@ -19,7 +19,7 @@ cd /app
 
 # Create persistent storage
 mkdir -p /share/monica/storage/app/public
-rm -rf /app/storage/app/public
+rm -rf /app/storage/app/public  
 ln -sf /share/monica/storage/app/public /app/storage/app/public
 
 chmod -R 777 storage bootstrap/cache
@@ -35,7 +35,7 @@ APP_KEY=$(cat "$APP_KEY_FILE")
 # Extract domain from APP_URL
 DOMAIN=$(echo "$APP_URL" | sed -E 's|https?://([^:/]+).*|\1|')
 
-# Force HTTPS detection - create a bootstrap file
+# Force HTTPS detection
 cat > /app/bootstrap/force-https.php <<'PHP'
 <?php
 if (isset($_SERVER['HTTP_X_FORWARDED_PROTO']) && $_SERVER['HTTP_X_FORWARDED_PROTO'] === 'https') {
@@ -44,12 +44,11 @@ if (isset($_SERVER['HTTP_X_FORWARDED_PROTO']) && $_SERVER['HTTP_X_FORWARDED_PROT
 }
 PHP
 
-# Include it at the start of public/index.php
 sed -i '2i require __DIR__.'"'"'/../bootstrap/force-https.php'"'"';' /app/public/index.php
 
 cat > /app/.env <<EOF
 APP_NAME=Monica
-APP_ENV=local
+APP_ENV=production
 APP_KEY=base64:$APP_KEY
 APP_DEBUG=false
 APP_URL=$APP_URL
@@ -66,15 +65,15 @@ DB_DATABASE=$DB_DATABASE
 DB_USERNAME=$DB_USER
 DB_PASSWORD=$DB_PASSWORD
 MAIL_MAILER=log
-FILESYSTEM_DISK=public
-DEFAULT_FILESYSTEM_CLOUD=public
+FILESYSTEM_DISK=local
 DEFAULT_MAX_UPLOAD_SIZE=104857600
 DEFAULT_MAX_STORAGE_SIZE=5368709120
 TRUSTED_PROXIES=**
-AWS_ACCESS_KEY_ID=local
-AWS_SECRET_ACCESS_KEY=local
+AWS_ACCESS_KEY_ID=dummy_key
+AWS_SECRET_ACCESS_KEY=dummy_secret
 AWS_DEFAULT_REGION=us-east-1
-AWS_BUCKET=local
+AWS_BUCKET=local_storage
+AWS_USE_PATH_STYLE_ENDPOINT=false
 EOF
 
 php83 artisan migrate --force
