@@ -23,7 +23,7 @@ A self-hosted personal relationship management system for Home Assistant. Monica
 ### Prerequisites
 
 - Home Assistant OS or Supervised
-- MariaDB add-on (recommended) or external MySQL database
+- MariaDB
 - At least 2GB free storage space
 
 ### Steps
