@@ -23,6 +23,7 @@
     "db_port": "int",
     "db_database": "str",
     "db_user": "str",
-    "db_password": "password"
+    "db_password": "password",
+    "app_url": "str"
   }
 }
