@@ -18,15 +18,12 @@ cd /app
 
 chmod -R 777 storage bootstrap/cache
 
-# Don't overwrite AppServiceProvider - just append to boot method
-sed -i '/public function boot/a\        \\Illuminate\\Support\\Facades\\URL::forceScheme('\''https'\'');' /app/app/Providers/AppServiceProvider.php
-
 # Create .env file for Laravel with HTTPS
 cat > /app/.env <<EOF
 APP_NAME=Monica
 APP_ENV=production
 APP_KEY=base64:$(openssl rand -base64 32)
-APP_DEBUG=true
+APP_DEBUG=false
 APP_URL=https://stotlandyard.xyz
 
 DB_CONNECTION=mysql
@@ -40,6 +37,7 @@ MAIL_MAILER=log
 MAIL_VERIFY_EMAIL=false
 APP_DISABLE_SIGNUP=false
 TRUSTED_PROXIES=*
+ASSET_URL=https://stotlandyard.xyz
 EOF
 
 php83 artisan migrate --force
