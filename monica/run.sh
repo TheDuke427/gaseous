@@ -17,10 +17,17 @@ done
 cd /app
 chmod -R 777 storage bootstrap/cache
 
+# Generate a consistent APP_KEY
+APP_KEY_FILE=/data/app_key
+if [ ! -f "$APP_KEY_FILE" ]; then
+    openssl rand -base64 32 > "$APP_KEY_FILE"
+fi
+APP_KEY=$(cat "$APP_KEY_FILE")
+
 cat > /app/.env <<EOF
 APP_NAME=Monica
 APP_ENV=production
-APP_KEY=base64:$(openssl rand -base64 32)
+APP_KEY=base64:$APP_KEY
 APP_DEBUG=false
 APP_URL=https://crm.stotlandyard.xyz
 SESSION_DRIVER=file
