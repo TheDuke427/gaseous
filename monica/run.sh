@@ -16,7 +16,14 @@ while ! mysql -h"$DB_HOST" -P"$DB_PORT" -u"$DB_USER" -p"$DB_PASSWORD" -e "SELECT
 done
 
 cd /app
+
+# Create persistent storage
+mkdir -p /share/monica/storage/app/public
+rm -rf /app/storage/app/public
+ln -sf /share/monica/storage/app/public /app/storage/app/public
+
 chmod -R 777 storage bootstrap/cache
+chmod -R 777 /share/monica/storage
 
 # Generate a consistent APP_KEY
 APP_KEY_FILE=/data/app_key
@@ -59,11 +66,17 @@ DB_DATABASE=$DB_DATABASE
 DB_USERNAME=$DB_USER
 DB_PASSWORD=$DB_PASSWORD
 MAIL_MAILER=log
+FILESYSTEM_DISK=public
+DEFAULT_MAX_UPLOAD_SIZE=10485760
+DEFAULT_MAX_STORAGE_SIZE=536870912
 TRUSTED_PROXIES=**
 EOF
 
 php83 artisan migrate --force
 mysql -h"$DB_HOST" -P"$DB_PORT" -u"$DB_USER" -p"$DB_PASSWORD" "$DB_DATABASE" -e "UPDATE users SET email_verified_at = NOW() WHERE email_verified_at IS NULL;"
+mysql -h"$DB_HOST" -P"$DB_PORT" -u"$DB_USER" -p"$DB_PASSWORD" "$DB_DATABASE" -e "UPDATE accounts SET storage_limit_in_mb = 5000;"
+
+php83 artisan storage:link
 
 php83 artisan config:clear
 php83 artisan route:clear  
