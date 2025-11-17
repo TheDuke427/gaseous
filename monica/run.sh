@@ -18,6 +18,9 @@ cd /app
 
 chmod -R 777 storage bootstrap/cache
 
+# Don't overwrite AppServiceProvider - just append to boot method
+sed -i '/public function boot/a\        \\Illuminate\\Support\\Facades\\URL::forceScheme('\''https'\'');' /app/app/Providers/AppServiceProvider.php
+
 # Create .env file for Laravel with HTTPS
 cat > /app/.env <<EOF
 APP_NAME=Monica
@@ -37,7 +40,6 @@ MAIL_MAILER=log
 MAIL_VERIFY_EMAIL=false
 APP_DISABLE_SIGNUP=false
 TRUSTED_PROXIES=*
-FORCE_HTTPS=true
 EOF
 
 php83 artisan migrate --force
@@ -59,9 +61,6 @@ if pgrep php-fpm83 > /dev/null; then
 else
     echo "PHP-FPM not found in process list"
 fi
-
-touch /app/storage/logs/laravel.log
-tail -f /app/storage/logs/laravel.log &
 
 echo "Starting nginx..."
 exec nginx -g 'daemon off;'
