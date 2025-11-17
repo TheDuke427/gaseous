@@ -24,6 +24,30 @@ if [ ! -f "$APP_KEY_FILE" ]; then
 fi
 APP_KEY=$(cat "$APP_KEY_FILE")
 
+# Force HTTPS in AppServiceProvider
+cat > /app/app/Providers/AppServiceProvider.php <<'PHPEOF'
+<?php
+
+namespace App\Providers;
+
+use Illuminate\Support\ServiceProvider;
+use Illuminate\Support\Facades\URL;
+
+class AppServiceProvider extends ServiceProvider
+{
+    public function register(): void
+    {
+    }
+
+    public function boot(): void
+    {
+        if (isset($_SERVER['HTTP_X_FORWARDED_PROTO']) && $_SERVER['HTTP_X_FORWARDED_PROTO'] === 'https') {
+            URL::forceScheme('https');
+        }
+    }
+}
+PHPEOF
+
 cat > /app/.env <<EOF
 APP_NAME=Monica
 APP_ENV=production
