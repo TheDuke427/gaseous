@@ -16,15 +16,18 @@ done
 
 cd /app
 
-# Check accounts table
-echo "=== Accounts Table Structure ==="
-mysql -h"$DB_HOST" -P"$DB_PORT" -u"$DB_USER" -p"$DB_PASSWORD" "$DB_DATABASE" -e "DESCRIBE accounts;" 2>/dev/null
-echo "================================"
+# List all tables to see what might contain settings
+echo "=== All Tables ==="
+mysql -h"$DB_HOST" -P"$DB_PORT" -u"$DB_USER" -p"$DB_PASSWORD" "$DB_DATABASE" -e "SHOW TABLES;" 2>/dev/null | grep -i "setting\|config\|preference" || echo "No settings tables found"
+echo "=================="
 
-# Check account data
-echo "=== Account Data ==="
-mysql -h"$DB_HOST" -P"$DB_PORT" -u"$DB_USER" -p"$DB_PASSWORD" "$DB_DATABASE" -e "SELECT * FROM accounts;" 2>/dev/null
-echo "===================="
+# Try to find where the upload check happens in the code
+echo "=== Checking PHP files for upload logic ==="
+find app/Http/Controllers -name "*.php" -exec grep -l "upload\|file" {} \; 2>/dev/null | head -5
+echo "==========================================="
+
+# Check if there's a FileUploadController or similar
+ls -la app/Http/Controllers/ | grep -i file || echo "No file controller found"
 
 chmod -R 777 storage bootstrap/cache
 
@@ -46,6 +49,9 @@ EOF
 
 php83 artisan migrate --force
 mysql -h"$DB_HOST" -P"$DB_PORT" -u"$DB_USER" -p"$DB_PASSWORD" "$DB_DATABASE" -e "UPDATE users SET email_verified_at = NOW() WHERE email_verified_at IS NULL;"
+
+# Increase the storage limit
+mysql -h"$DB_HOST" -P"$DB_PORT" -u"$DB_USER" -p"$DB_PASSWORD" "$DB_DATABASE" -e "UPDATE accounts SET storage_limit_in_mb = 5000 WHERE id = '019a8e88-1fc2-7206-a1f7-062b10864915';"
 
 php83 artisan storage:link
 php83 artisan config:clear
