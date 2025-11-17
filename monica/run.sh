@@ -28,7 +28,7 @@ cat > /app/.env <<EOF
 APP_NAME=Monica
 APP_ENV=production
 APP_KEY=base64:$(openssl rand -base64 32)
-APP_DEBUG=true
+APP_DEBUG=false
 APP_URL=https://crm.stotlandyard.xyz
 
 SESSION_DRIVER=file
@@ -62,30 +62,5 @@ php83 artisan config:clear
 php83 artisan route:clear  
 php83 artisan view:clear
 
-echo "Starting PHP-FPM with logging..."
-php-fpm83 -F -R 2>&1 | tee /tmp/php-fpm.log &
-PHP_PID=$!
-
-sleep 3
-
-if pgrep php-fpm83 > /dev/null; then
-    echo "PHP-FPM running (PID: $PHP_PID)"
-else
-    echo "PHP-FPM failed!"
-    cat /tmp/php-fpm.log
-    exit 1
-fi
-
-# Monitor PHP-FPM in background
-(while true; do
-    if ! pgrep php-fpm83 > /dev/null; then
-        echo "PHP-FPM DIED! Logs:"
-        cat /tmp/php-fpm.log
-        # Restart it
-        php-fpm83 -F -R 2>&1 | tee -a /tmp/php-fpm.log &
-    fi
-    sleep 5
-done) &
-
-echo "Monica ready"
-exec nginx -g 'daemon off;'
+echo "Starting Monica with PHP built-in server..."
+exec php83 -S 0.0.0.0:8181 -t public
