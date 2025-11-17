@@ -9,6 +9,7 @@
   "ports": {
     "8181/tcp": 8181
   },
+  "map": ["share:rw"],
   "options": {
     "db_host": "core-mariadb",
     "db_port": 3306,
