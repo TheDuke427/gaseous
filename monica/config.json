@@ -15,7 +15,8 @@
     "db_port": 3306,
     "db_database": "monica",
     "db_user": "monica",
-    "db_password": "monica"
+    "db_password": "monica",
+    "app_url": "http://localhost:8181"
   },
   "schema": {
     "db_host": "str",
