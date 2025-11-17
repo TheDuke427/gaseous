@@ -16,20 +16,10 @@ done
 
 cd /app
 
-# Find all controllers
-echo "=== Looking for File/Document controllers ==="
-find app -type f -name "*.php" | grep -i "file\|document\|upload" | head -10
-echo "=============================================="
-
-# Check routes for file/upload related routes
-echo "=== Checking routes ==="
-grep -i "file\|upload\|document" routes/web.php 2>/dev/null | head -10 || echo "Not in web.php"
-echo "======================="
-
-# Check if there's an API route
-if [ -f routes/api.php ]; then
-    grep -i "file\|upload\|document" routes/api.php 2>/dev/null | head -10 || echo "Not in api.php"
-fi
+# Check the VaultFileController
+echo "=== VaultFileController content ==="
+cat app/Domains/Vault/ManageFiles/Web/Controllers/VaultFileController.php
+echo "===================================="
 
 chmod -R 777 storage bootstrap/cache
 
