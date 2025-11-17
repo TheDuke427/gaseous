@@ -31,9 +31,9 @@ chmod -R 777 /share/monica/storage
 
 cat > /app/.env <<EOF
 APP_NAME=Monica
-APP_ENV=local
+APP_ENV=production
 APP_KEY=base64:$(openssl rand -base64 32)
-APP_DEBUG=true
+APP_DEBUG=false
 APP_URL=http://192.168.86.32:8181
 
 DB_CONNECTION=mysql
@@ -44,28 +44,15 @@ DB_USERNAME=$DB_USER
 DB_PASSWORD=$DB_PASSWORD
 
 MAIL_MAILER=log
-
-# Local filesystem for uploads
 FILESYSTEM_DISK=local
-DEFAULT_FILESYSTEM_CLOUD=local
-
-# Upload limits
 DEFAULT_MAX_UPLOAD_SIZE=10485760
 DEFAULT_MAX_STORAGE_SIZE=536870912
-
-# Disable S3 requirement
-AWS_ACCESS_KEY_ID=
-AWS_SECRET_ACCESS_KEY=
-AWS_DEFAULT_REGION=us-east-1
-AWS_BUCKET=
-AWS_USE_PATH_STYLE_ENDPOINT=false
 EOF
 
 php83 artisan migrate --force
 mysql -h"$DB_HOST" -P"$DB_PORT" -u"$DB_USER" -p"$DB_PASSWORD" "$DB_DATABASE" -e "UPDATE users SET email_verified_at = NOW() WHERE email_verified_at IS NULL;"
 
 php83 artisan storage:link
-
 php83 artisan config:clear
 php83 artisan route:clear  
 php83 artisan view:clear
