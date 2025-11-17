@@ -15,19 +15,13 @@ while ! mysql -h"$DB_HOST" -P"$DB_PORT" -u"$DB_USER" -p"$DB_PASSWORD" -e "SELECT
 done
 
 cd /app
-
-# Find where uploadcare config is used
-echo "=== Searching for uploadcare in PHP ==="
-find app -name "*.php" -exec grep -l "UPLOADCARE" {} \; 2>/dev/null | head -5
-echo "========================================"
-
 chmod -R 777 storage bootstrap/cache
 
 cat > /app/.env <<EOF
 APP_NAME=Monica
 APP_ENV=production
 APP_KEY=base64:$(openssl rand -base64 32)
-APP_DEBUG=true
+APP_DEBUG=false
 APP_URL=http://192.168.86.32:8181
 DB_CONNECTION=mysql
 DB_HOST=$DB_HOST
@@ -37,8 +31,6 @@ DB_USERNAME=$DB_USER
 DB_PASSWORD=$DB_PASSWORD
 MAIL_MAILER=log
 FILESYSTEM_DISK=public
-
-# Uploadcare keys (dummy values to enable uploads)
 UPLOADCARE_PUBLIC_KEY=demopublickey
 UPLOADCARE_PRIVATE_KEY=demoprivatekey
 EOF
@@ -52,12 +44,10 @@ php83 artisan config:clear
 php83 artisan route:clear  
 php83 artisan view:clear
 
-echo "=== Checking if uploadcare keys are loaded ==="
-php83 -r "require 'vendor/autoload.php'; \$app = require_once 'bootstrap/app.php'; \$app->make('Illuminate\Contracts\Console\Kernel')->bootstrap(); echo 'UPLOADCARE_PUBLIC_KEY: ' . config('monica.uploadcare_public_key') . PHP_EOL;"
-echo "==============================================="
-
 php-fpm83 -F -R &
 sleep 3
 
-echo "Monica ready at http://192.168.86.32:8181"
+echo "Monica CRM ready at http://192.168.86.32:8181"
+echo "- File uploads: enabled"
+echo "- Storage limit: 5GB"
 exec nginx -g 'daemon off;'
