@@ -22,7 +22,9 @@ APP_NAME=Monica
 APP_ENV=production
 APP_KEY=base64:$(openssl rand -base64 32)
 APP_DEBUG=false
-APP_URL=http://192.168.86.32:8181
+APP_URL=https://crm.stotlandyard.xyz
+SESSION_DOMAIN=.stotlandyard.xyz
+SANCTUM_STATEFUL_DOMAINS=crm.stotlandyard.xyz
 DB_CONNECTION=mysql
 DB_HOST=$DB_HOST
 DB_PORT=$DB_PORT
@@ -31,8 +33,7 @@ DB_USERNAME=$DB_USER
 DB_PASSWORD=$DB_PASSWORD
 MAIL_MAILER=log
 FILESYSTEM_DISK=public
-UPLOADCARE_PUBLIC_KEY=demopublickey
-UPLOADCARE_PRIVATE_KEY=demoprivatekey
+TRUSTED_PROXIES=*
 EOF
 
 php83 artisan migrate --force
@@ -47,7 +48,5 @@ php83 artisan view:clear
 php-fpm83 -F -R &
 sleep 3
 
-echo "Monica CRM ready at http://192.168.86.32:8181"
-echo "- File uploads: enabled"
-echo "- Storage limit: 5GB"
+echo "Monica ready at http://192.168.86.32:8181"
 exec nginx -g 'daemon off;'
