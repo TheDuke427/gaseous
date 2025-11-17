@@ -30,27 +30,30 @@ chmod -R 777 /share/monica/storage
 
 cat > /app/.env <<EOF
 APP_NAME=Monica
-APP_ENV=production
+APP_ENV=local
 APP_KEY=base64:$(openssl rand -base64 32)
 APP_DEBUG=true
 APP_URL=http://192.168.86.32:8181
+
 DB_CONNECTION=mysql
 DB_HOST=$DB_HOST
 DB_PORT=$DB_PORT
 DB_DATABASE=$DB_DATABASE
 DB_USERNAME=$DB_USER
 DB_PASSWORD=$DB_PASSWORD
+
 MAIL_MAILER=log
-FILESYSTEM_DISK=local
-DEFAULT_MAX_UPLOAD_SIZE=10240000
-DEFAULT_MAX_STORAGE_SIZE=512000000
-ALLOW_AVATAR_UPLOADS=true
+
+FILESYSTEM_DISK=public
+DEFAULT_FILESYSTEM_CLOUD=public
+
+DEFAULT_MAX_UPLOAD_SIZE=10485760
+DEFAULT_MAX_STORAGE_SIZE=536870912
 EOF
 
 php83 artisan migrate --force
 mysql -h"$DB_HOST" -P"$DB_PORT" -u"$DB_USER" -p"$DB_PASSWORD" "$DB_DATABASE" -e "UPDATE users SET email_verified_at = NOW() WHERE email_verified_at IS NULL;"
 
-# Create storage link for public access
 php83 artisan storage:link
 
 php83 artisan config:clear
