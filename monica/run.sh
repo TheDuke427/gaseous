@@ -16,22 +16,15 @@ done
 
 cd /app
 
-# Check what tables exist
-echo "=== Database Tables ==="
-mysql -h"$DB_HOST" -P"$DB_PORT" -u"$DB_USER" -p"$DB_PASSWORD" "$DB_DATABASE" -e "SHOW TABLES LIKE '%vault%';" 2>/dev/null || echo "Can't check tables"
-mysql -h"$DB_HOST" -P"$DB_PORT" -u"$DB_USER" -p"$DB_PASSWORD" "$DB_DATABASE" -e "SHOW TABLES LIKE '%file%';" 2>/dev/null || echo "Can't check tables"
-mysql -h"$DB_HOST" -P"$DB_PORT" -u"$DB_USER" -p"$DB_PASSWORD" "$DB_DATABASE" -e "SHOW TABLES LIKE '%upload%';" 2>/dev/null || echo "Can't check tables"
-echo "======================="
-
-# Check vault settings structure if exists
-echo "=== Vault Settings Structure ==="
-mysql -h"$DB_HOST" -P"$DB_PORT" -u"$DB_USER" -p"$DB_PASSWORD" "$DB_DATABASE" -e "DESCRIBE vault_settings;" 2>/dev/null || echo "vault_settings doesn't exist"
-echo "================================"
-
-# Check current vault settings
-echo "=== Current Vault Settings ==="
-mysql -h"$DB_HOST" -P"$DB_PORT" -u"$DB_USER" -p"$DB_PASSWORD" "$DB_DATABASE" -e "SELECT * FROM vault_settings LIMIT 5;" 2>/dev/null || echo "Can't read vault_settings"
+# Check vaults table structure
+echo "=== Vaults Table Structure ==="
+mysql -h"$DB_HOST" -P"$DB_PORT" -u"$DB_USER" -p"$DB_PASSWORD" "$DB_DATABASE" -e "DESCRIBE vaults;" 2>/dev/null
 echo "=============================="
+
+# Check current vault data
+echo "=== Current Vault Data ==="
+mysql -h"$DB_HOST" -P"$DB_PORT" -u"$DB_USER" -p"$DB_PASSWORD" "$DB_DATABASE" -e "SELECT * FROM vaults;" 2>/dev/null
+echo "==========================="
 
 chmod -R 777 storage bootstrap/cache
 
