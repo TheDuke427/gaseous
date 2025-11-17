@@ -25,17 +25,21 @@ if [ ! -f "$APP_KEY_FILE" ]; then
 fi
 APP_KEY=$(cat "$APP_KEY_FILE")
 
+# Extract domain from APP_URL
+DOMAIN=$(echo "$APP_URL" | sed -E 's|https?://([^:/]+).*|\1|')
+
 cat > /app/.env <<EOF
 APP_NAME=Monica
 APP_ENV=production
 APP_KEY=base64:$APP_KEY
-APP_DEBUG=true
+APP_DEBUG=false
 APP_URL=$APP_URL
+ASSET_URL=$APP_URL
 SESSION_DRIVER=file
 SESSION_LIFETIME=120
 SESSION_SECURE_COOKIE=false
 SESSION_SAME_SITE=lax
-SANCTUM_STATEFUL_DOMAINS=crm.stotlandyard.xyz,localhost:8181,192.168.86.32:8181
+SANCTUM_STATEFUL_DOMAINS=$DOMAIN,localhost:8181,192.168.86.32:8181
 DB_CONNECTION=mysql
 DB_HOST=$DB_HOST
 DB_PORT=$DB_PORT
@@ -54,4 +58,5 @@ php83 artisan route:clear
 php83 artisan view:clear
 
 echo "Monica ready. APP_URL set to: $APP_URL"
-exec php83 -S 0.0.0.0:8181 -t public
+
+exec php83 -d variables_order=EGPCS -S 0.0.0.0:8181 -t public
