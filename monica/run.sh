@@ -16,15 +16,15 @@ done
 
 cd /app
 
-# Check vaults table structure
-echo "=== Vaults Table Structure ==="
-mysql -h"$DB_HOST" -P"$DB_PORT" -u"$DB_USER" -p"$DB_PASSWORD" "$DB_DATABASE" -e "DESCRIBE vaults;" 2>/dev/null
-echo "=============================="
+# Check accounts table
+echo "=== Accounts Table Structure ==="
+mysql -h"$DB_HOST" -P"$DB_PORT" -u"$DB_USER" -p"$DB_PASSWORD" "$DB_DATABASE" -e "DESCRIBE accounts;" 2>/dev/null
+echo "================================"
 
-# Check current vault data
-echo "=== Current Vault Data ==="
-mysql -h"$DB_HOST" -P"$DB_PORT" -u"$DB_USER" -p"$DB_PASSWORD" "$DB_DATABASE" -e "SELECT * FROM vaults;" 2>/dev/null
-echo "==========================="
+# Check account data
+echo "=== Account Data ==="
+mysql -h"$DB_HOST" -P"$DB_PORT" -u"$DB_USER" -p"$DB_PASSWORD" "$DB_DATABASE" -e "SELECT * FROM accounts;" 2>/dev/null
+echo "===================="
 
 chmod -R 777 storage bootstrap/cache
 
