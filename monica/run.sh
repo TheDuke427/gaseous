@@ -17,6 +17,11 @@ done
 
 cd /app
 
+# Check what files exist in database
+echo "=== Checking existing files in database ==="
+mysql -h"$DB_HOST" -P"$DB_PORT" -u"$DB_USER" -p"$DB_PASSWORD" "$DB_DATABASE" -e "SELECT id, name, type, size FROM files LIMIT 5;" 2>/dev/null || echo "No files found"
+echo "==========================================="
+
 # Create persistent storage
 mkdir -p /share/monica/storage/app/public
 rm -rf /app/storage/app/public  
@@ -48,9 +53,9 @@ sed -i '2i require __DIR__.'"'"'/../bootstrap/force-https.php'"'"';' /app/public
 
 cat > /app/.env <<EOF
 APP_NAME=Monica
-APP_ENV=production
+APP_ENV=local
 APP_KEY=base64:$APP_KEY
-APP_DEBUG=false
+APP_DEBUG=true
 APP_URL=$APP_URL
 ASSET_URL=$APP_URL
 SESSION_DRIVER=file
@@ -65,15 +70,10 @@ DB_DATABASE=$DB_DATABASE
 DB_USERNAME=$DB_USER
 DB_PASSWORD=$DB_PASSWORD
 MAIL_MAILER=log
-FILESYSTEM_DISK=local
+FILESYSTEM_DISK=public
 DEFAULT_MAX_UPLOAD_SIZE=104857600
 DEFAULT_MAX_STORAGE_SIZE=5368709120
 TRUSTED_PROXIES=**
-AWS_ACCESS_KEY_ID=dummy_key
-AWS_SECRET_ACCESS_KEY=dummy_secret
-AWS_DEFAULT_REGION=us-east-1
-AWS_BUCKET=local_storage
-AWS_USE_PATH_STYLE_ENDPOINT=false
 EOF
 
 php83 artisan migrate --force
