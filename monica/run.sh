@@ -17,10 +17,15 @@ done
 
 cd /app
 
-# Check what files exist in database
-echo "=== Checking existing files in database ==="
-mysql -h"$DB_HOST" -P"$DB_PORT" -u"$DB_USER" -p"$DB_PASSWORD" "$DB_DATABASE" -e "SELECT id, name, type, size FROM files LIMIT 5;" 2>/dev/null || echo "No files found"
-echo "==========================================="
+# Check what routes exist for file upload
+echo "=== Checking file upload routes ==="
+grep -r "upload\|store" routes/web.php | grep -i file || echo "No file upload routes found"
+echo "===================================="
+
+# Check the ViewHelper to see what data is passed to frontend
+echo "=== Checking what data is sent to frontend ==="
+cat app/Domains/Contact/ManageDocuments/Web/ViewHelpers/ModuleDocumentsViewHelper.php | head -50 || echo "File not found"
+echo "==============================================="
 
 # Create persistent storage
 mkdir -p /share/monica/storage/app/public
@@ -84,8 +89,4 @@ php83 artisan storage:link
 
 php83 artisan config:clear
 php83 artisan route:clear  
-php83 artisan view:clear
-
-echo "Monica ready. APP_URL set to: $APP_URL"
-
-exec php83 -S 0.0.0.0:8181 -t public
+php83 arti
