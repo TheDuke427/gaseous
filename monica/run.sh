@@ -23,8 +23,9 @@ APP_ENV=production
 APP_KEY=base64:$(openssl rand -base64 32)
 APP_DEBUG=false
 APP_URL=https://crm.stotlandyard.xyz
-SESSION_DOMAIN=.stotlandyard.xyz
-SANCTUM_STATEFUL_DOMAINS=crm.stotlandyard.xyz
+SESSION_DOMAIN=
+SESSION_SECURE_COOKIE=false
+SANCTUM_STATEFUL_DOMAINS=crm.stotlandyard.xyz,192.168.86.32:8181
 DB_CONNECTION=mysql
 DB_HOST=$DB_HOST
 DB_PORT=$DB_PORT
@@ -48,5 +49,5 @@ php83 artisan view:clear
 php-fpm83 -F -R &
 sleep 3
 
-echo "Monica ready at http://192.168.86.32:8181"
+echo "Monica ready"
 exec nginx -g 'daemon off;'
