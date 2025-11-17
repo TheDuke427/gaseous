@@ -17,10 +17,9 @@ done
 cd /app
 
 # Search for the upload keys check
-echo "=== Searching for upload keys check ==="
-grep -r "keys to manage uploads" . --include="*.php" || echo "Not found in PHP files"
-grep -r "keys to manage uploads" . --include="*.blade.php" || echo "Not found in blade files"
-echo "========================================"
+echo "=== Searching for upload keys message ==="
+find . -name "*.blade.php" -exec grep -l "keys to manage uploads" {} \; 2>/dev/null || echo "Not found"
+echo "=========================================="
 
 chmod -R 777 storage bootstrap/cache
 
