@@ -16,10 +16,9 @@ done
 
 cd /app
 
-# Search for where uploadcare data is set
-echo "=== Searching for uploadcare config ==="
-grep -r "uploadcare" app/ --include="*.php" | grep -i "publicKey\|public_key" | head -5
-grep -r "UPLOADCARE" . --include=".env.example" 2>/dev/null || echo "Not in .env.example"
+# Find where uploadcare config is used
+echo "=== Searching for uploadcare in PHP ==="
+find app -name "*.php" -exec grep -l "UPLOADCARE" {} \; 2>/dev/null | head -5
 echo "========================================"
 
 chmod -R 777 storage bootstrap/cache
@@ -52,6 +51,10 @@ php83 artisan storage:link
 php83 artisan config:clear
 php83 artisan route:clear  
 php83 artisan view:clear
+
+echo "=== Checking if uploadcare keys are loaded ==="
+php83 -r "require 'vendor/autoload.php'; \$app = require_once 'bootstrap/app.php'; \$app->make('Illuminate\Contracts\Console\Kernel')->bootstrap(); echo 'UPLOADCARE_PUBLIC_KEY: ' . config('monica.uploadcare_public_key') . PHP_EOL;"
+echo "==============================================="
 
 php-fpm83 -F -R &
 sleep 3
