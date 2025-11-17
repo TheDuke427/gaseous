@@ -30,7 +30,7 @@ A self-hosted personal relationship management system for Home Assistant. Monica
 
 1. **Add the Repository**
    - Go to **Supervisor** → **Add-on Store** → **⋮** (three dots) → **Repositories**
-   - Add this repository URL: `[YOUR_REPO_URL]`
+   - Add this repository URL: `https://github.com/TheDuke427/gaseous`
 
 2. **Install the Add-on**
    - Find "Monica CRM" in the add-on store
@@ -142,15 +142,6 @@ Monica supports uploading photos and documents for your contacts.
 
 ## 🔧 Troubleshooting
 
-### Cannot Login After Setup
-
-**Symptom:** Login button clears password field but doesn't log you in.
-
-**Solution:** 
-- Clear your browser cache and cookies for the Monica domain
-- Try accessing in an incognito/private window
-- Check that `app_url` matches how you're accessing Monica (HTTP vs HTTPS)
-
 ### 419 Page Expired Error
 
 **Symptom:** Getting "419 Page Expired" errors, especially on mobile.
@@ -161,15 +152,6 @@ Monica supports uploading photos and documents for your contacts.
 - Ensure cookies are enabled in your browser
 - Try disabling "Prevent Cross-Site Tracking" on iOS Safari
 
-### 502 Bad Gateway on Page Refresh
-
-**Symptom:** Pages load initially but refreshing causes 502 errors.
-
-**Solution:**
-- This is a known limitation of PHP's built-in server
-- Wait 30 seconds and try again
-- Consider the page successfully loaded on first try
-
 ### Mixed Content Errors (HTTPS)
 
 **Symptom:** Page loads but assets/login doesn't work when accessing via HTTPS.
@@ -178,61 +160,6 @@ Monica supports uploading photos and documents for your contacts.
 - Ensure `app_url` in configuration uses `https://` not `http://`
 - Restart the add-on after changing `app_url`
 - Clear browser cache
-
-### No File Upload Options
-
-**Symptom:** Cannot see buttons to upload photos or documents.
-
-**Solution:**
-- Check that the add-on has access to `/share` storage
-- Verify the configuration includes the demo Uploadcare keys
-- Check the logs for any storage-related errors
-
----
-
-## 🗄️ Data & Backups
-
-### Data Locations
-
-- **Database:** Stored in your MariaDB instance
-- **Uploaded Files:** `/share/monica/storage/` on your Home Assistant server
-- **Application Key:** `/data/app_key` (persistent across restarts)
-
-### Backup Recommendations
-
-1. **Database Backup**
-   - Use MariaDB add-on's backup features, or
-   - Manual backup: `mysqldump -u monica -p monica > monica_backup.sql`
-
-2. **File Storage Backup**
-   - Back up the `/share/monica/` directory
-   - Use Home Assistant's backup features
-
-3. **Regular Backups**
-   - Schedule regular Home Assistant backups that include add-on data
-   - Store backups off-site for disaster recovery
-
----
-
-## 🔄 Updating
-
-When a new version of the add-on is available:
-
-1. Go to **Supervisor** → **Dashboard**
-2. Click on **Monica CRM**
-3. Click **Update** if available
-4. Wait for the update to complete
-5. Restart the add-on
-
-**Note:** Major updates may require database migrations which can take several minutes.
-
----
-
-## 🐛 Known Issues
-
-- **502 errors on refresh:** Occasional gateway timeouts when refreshing pages rapidly. Wait a few seconds and try again.
-- **Mobile session timeouts:** Some mobile browsers may expire sessions more aggressively. Simply log back in.
-- **File upload size limits:** Default limit is 100MB per file. This is a PHP limitation.
 
 ---
 
