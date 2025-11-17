@@ -16,10 +16,11 @@ done
 
 cd /app
 
-# Check Monica's filesystem config
-echo "=== Checking Monica filesystem config ==="
-cat config/filesystems.php | grep -A 20 "disks" || true
-echo "========================================="
+# Search for the upload keys check
+echo "=== Searching for upload keys check ==="
+grep -r "keys to manage uploads" . --include="*.php" || echo "Not found in PHP files"
+grep -r "keys to manage uploads" . --include="*.blade.php" || echo "Not found in blade files"
+echo "========================================"
 
 chmod -R 777 storage bootstrap/cache
 
@@ -36,11 +37,13 @@ DB_DATABASE=$DB_DATABASE
 DB_USERNAME=$DB_USER
 DB_PASSWORD=$DB_PASSWORD
 MAIL_MAILER=log
+FILESYSTEM_DISK=public
 EOF
 
 php83 artisan migrate --force
 mysql -h"$DB_HOST" -P"$DB_PORT" -u"$DB_USER" -p"$DB_PASSWORD" "$DB_DATABASE" -e "UPDATE users SET email_verified_at = NOW() WHERE email_verified_at IS NULL;"
 
+php83 artisan storage:link
 php83 artisan config:clear
 php83 artisan route:clear  
 php83 artisan view:clear
