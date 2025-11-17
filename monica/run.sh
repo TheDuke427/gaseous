@@ -28,6 +28,18 @@ APP_KEY=$(cat "$APP_KEY_FILE")
 # Extract domain from APP_URL
 DOMAIN=$(echo "$APP_URL" | sed -E 's|https?://([^:/]+).*|\1|')
 
+# Force HTTPS detection - create a bootstrap file
+cat > /app/bootstrap/force-https.php <<'PHP'
+<?php
+if (isset($_SERVER['HTTP_X_FORWARDED_PROTO']) && $_SERVER['HTTP_X_FORWARDED_PROTO'] === 'https') {
+    $_SERVER['HTTPS'] = 'on';
+    $_SERVER['SERVER_PORT'] = 443;
+}
+PHP
+
+# Include it at the start of public/index.php
+sed -i '2i require __DIR__.'"'"'/../bootstrap/force-https.php'"'"';' /app/public/index.php
+
 cat > /app/.env <<EOF
 APP_NAME=Monica
 APP_ENV=production
@@ -59,4 +71,4 @@ php83 artisan view:clear
 
 echo "Monica ready. APP_URL set to: $APP_URL"
 
-exec php83 -d variables_order=EGPCS -S 0.0.0.0:8181 -t public
+exec php83 -S 0.0.0.0:8181 -t public
