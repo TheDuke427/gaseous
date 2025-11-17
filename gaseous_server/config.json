@@ -1,6 +1,6 @@
 {
   "name": "Gaseous Server",
-  "version": "1.0.0",
+  "version": "1.7.14",
   "slug": "gaseous_server",
   "description": "Self-hosted Gaseous Server for emulation library management",
   "arch": ["amd64", "armv7", "aarch64"],
