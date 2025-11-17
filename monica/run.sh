@@ -15,7 +15,14 @@ while ! mysql -h"$DB_HOST" -P"$DB_PORT" -u"$DB_USER" -p"$DB_PASSWORD" -e "SELECT
 done
 
 cd /app
+
+# Create persistent storage
+mkdir -p /share/monica/storage/app/public
+rm -rf /app/storage/app/public
+ln -sf /share/monica/storage/app/public /app/storage/app/public
+
 chmod -R 777 storage bootstrap/cache
+chmod -R 777 /share/monica/storage
 
 cat > /app/.env <<EOF
 APP_NAME=Monica
@@ -41,6 +48,8 @@ DB_PASSWORD=$DB_PASSWORD
 
 MAIL_MAILER=log
 FILESYSTEM_DISK=public
+DEFAULT_MAX_UPLOAD_SIZE=10485760
+DEFAULT_MAX_STORAGE_SIZE=536870912
 TRUSTED_PROXIES=*
 EOF
 
@@ -53,8 +62,16 @@ php83 artisan config:clear
 php83 artisan route:clear  
 php83 artisan view:clear
 
+echo "Starting PHP-FPM..."
 php-fpm83 -F -R &
 sleep 3
+
+if pgrep php-fpm83 > /dev/null; then
+    echo "PHP-FPM running"
+else
+    echo "PHP-FPM failed to start!"
+    exit 1
+fi
 
 echo "Monica ready"
 exec nginx -g 'daemon off;'
