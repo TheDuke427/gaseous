@@ -17,11 +17,6 @@ done
 
 cd /app
 
-# Check StorageHelper - this is the KEY!
-echo "=== StorageHelper content ==="
-cat app/Helpers/StorageHelper.php
-echo "============================="
-
 # Create persistent storage
 mkdir -p /share/monica/storage/app/public
 rm -rf /app/storage/app/public  
@@ -53,9 +48,9 @@ sed -i '2i require __DIR__.'"'"'/../bootstrap/force-https.php'"'"';' /app/public
 
 cat > /app/.env <<EOF
 APP_NAME=Monica
-APP_ENV=local
+APP_ENV=production
 APP_KEY=base64:$APP_KEY
-APP_DEBUG=true
+APP_DEBUG=false
 APP_URL=$APP_URL
 ASSET_URL=$APP_URL
 SESSION_DRIVER=file
@@ -74,6 +69,8 @@ FILESYSTEM_DISK=public
 DEFAULT_MAX_UPLOAD_SIZE=104857600
 DEFAULT_MAX_STORAGE_SIZE=5368709120
 TRUSTED_PROXIES=**
+UPLOADCARE_PUBLIC_KEY=demopublickey
+UPLOADCARE_PRIVATE_KEY=demoprivatekey
 EOF
 
 php83 artisan migrate --force
