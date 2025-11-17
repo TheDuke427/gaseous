@@ -1,66 +1,48 @@
-#!/bin/bash
-set -e
+FROM alpine:3.20
 
-CONFIG_PATH=/data/options.json
+RUN apk add --no-cache \
+    php83 \
+    php83-cli \
+    php83-pdo \
+    php83-pdo_mysql \
+    php83-mbstring \
+    php83-tokenizer \
+    php83-curl \
+    php83-xml \
+    php83-opcache \
+    php83-session \
+    php83-dom \
+    php83-fileinfo \
+    php83-intl \
+    php83-bcmath \
+    php83-phar \
+    php83-iconv \
+    php83-xmlreader \
+    php83-xmlwriter \
+    php83-simplexml \
+    mariadb-client \
+    git \
+    jq \
+    bash \
+    curl \
+    openssl \
+    nodejs \
+    npm && \
+    ln -sf /usr/bin/php83 /usr/bin/php
 
-DB_HOST=$(jq -r '.db_host' $CONFIG_PATH)
-DB_PORT=$(jq -r '.db_port' $CONFIG_PATH)
-DB_DATABASE=$(jq -r '.db_database' $CONFIG_PATH)
-DB_USER=$(jq -r '.db_user' $CONFIG_PATH)
-DB_PASSWORD=$(jq -r '.db_password' $CONFIG_PATH)
+WORKDIR /app
 
-echo "Waiting for database..."
-while ! mysql -h"$DB_HOST" -P"$DB_PORT" -u"$DB_USER" -p"$DB_PASSWORD" -e "SELECT 1" 2>/dev/null; do
-    sleep 2
-done
+RUN git clone --depth 1 https://github.com/monicahq/monica.git /app
 
-cd /app
+RUN curl -sS https://getcomposer.org/installer | php83 -- --install-dir=/usr/local/bin --filename=composer
 
-# Create persistent storage
-mkdir -p /share/monica/storage/app/public
-rm -rf /app/storage/app/public
-ln -sf /share/monica/storage/app/public /app/storage/app/public
+RUN php83 /usr/local/bin/composer install --no-dev --no-interaction
 
-chmod -R 777 storage bootstrap/cache
-chmod -R 777 /share/monica/storage
+RUN npm install && npm run build
 
-cat > /app/.env <<EOF
-APP_NAME=Monica
-APP_ENV=production
-APP_KEY=base64:$(openssl rand -base64 32)
-APP_DEBUG=false
-APP_URL=https://crm.stotlandyard.xyz
+COPY run.sh /run.sh
+RUN chmod +x /run.sh
 
-SESSION_DRIVER=file
-SESSION_LIFETIME=120
-SESSION_DOMAIN=
-SESSION_SECURE_COOKIE=false
-SESSION_SAME_SITE=lax
+EXPOSE 8181
 
-SANCTUM_STATEFUL_DOMAINS=crm.stotlandyard.xyz,192.168.86.32:8181
-
-DB_CONNECTION=mysql
-DB_HOST=$DB_HOST
-DB_PORT=$DB_PORT
-DB_DATABASE=$DB_DATABASE
-DB_USERNAME=$DB_USER
-DB_PASSWORD=$DB_PASSWORD
-
-MAIL_MAILER=log
-FILESYSTEM_DISK=public
-DEFAULT_MAX_UPLOAD_SIZE=10485760
-DEFAULT_MAX_STORAGE_SIZE=536870912
-TRUSTED_PROXIES=*
-EOF
-
-php83 artisan migrate --force
-mysql -h"$DB_HOST" -P"$DB_PORT" -u"$DB_USER" -p"$DB_PASSWORD" "$DB_DATABASE" -e "UPDATE users SET email_verified_at = NOW() WHERE email_verified_at IS NULL;"
-mysql -h"$DB_HOST" -P"$DB_PORT" -u"$DB_USER" -p"$DB_PASSWORD" "$DB_DATABASE" -e "UPDATE accounts SET storage_limit_in_mb = 5000;"
-
-php83 artisan storage:link
-php83 artisan config:clear
-php83 artisan route:clear  
-php83 artisan view:clear
-
-echo "Starting Monica with PHP built-in server..."
-exec php83 -S 0.0.0.0:8181 -t public
+CMD ["/run.sh"]
