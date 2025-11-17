@@ -40,9 +40,6 @@ RUN php83 /usr/local/bin/composer install --no-dev --no-interaction
 
 RUN npm install && npm run build
 
-# Force trust all proxies
-RUN sed -i "s/protected \$proxies;/protected \$proxies = '*';/" app/Http/Middleware/TrustProxies.php
-
 COPY run.sh /run.sh
 RUN chmod +x /run.sh
 
