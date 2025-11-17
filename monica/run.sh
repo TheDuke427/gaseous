@@ -16,10 +16,10 @@ done
 
 cd /app
 
-# Check the VaultFileController
-echo "=== VaultFileController content ==="
-cat app/Domains/Vault/ManageFiles/Web/Controllers/VaultFileController.php
-echo "===================================="
+# Check the ViewHelper
+echo "=== VaultFileIndexViewHelper ==="
+cat app/Domains/Vault/ManageFiles/Web/ViewHelpers/VaultFileIndexViewHelper.php
+echo "================================="
 
 chmod -R 777 storage bootstrap/cache
 
