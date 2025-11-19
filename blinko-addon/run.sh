@@ -4,6 +4,18 @@ set -e
 # Read configuration
 NEXTAUTH_SECRET="${NEXTAUTH_SECRET:-CHANGE_ME_TO_SECURE_RANDOM_STRING}"
 
+# Determine the base URL based on ingress
+if bashio::config.true 'ingress'; then
+    INGRESS_ENTRY=$(bashio::addon.ingress_entry)
+    BASE_URL="https://$(bashio::config 'ssl')${INGRESS_ENTRY}"
+    # If SSL is not configured, fall back to the hostname
+    if [ -z "$(bashio::config 'ssl')" ]; then
+        BASE_URL="https://$(bashio::info.hostname)${INGRESS_ENTRY}"
+    fi
+else
+    BASE_URL="http://localhost:1111"
+fi
+
 # Create PostgreSQL directory
 mkdir -p /data/postgres /run/postgresql
 chown -R postgres:postgres /data/postgres /run/postgresql
@@ -34,9 +46,11 @@ mkdir -p /data/blinko
 
 # Set environment variables for Blinko
 export NODE_ENV=production
-export NEXTAUTH_URL=http://localhost:1111
-export NEXT_PUBLIC_BASE_URL=http://localhost:1111
+export NEXTAUTH_URL="${BASE_URL}"
+export NEXT_PUBLIC_BASE_URL="${BASE_URL}"
 export DATABASE_URL="postgresql://blinkouser:blinkopass@localhost:5432/blinko"
+
+echo "Using BASE_URL: ${BASE_URL}"
 
 # Run Prisma migrations to create tables
 echo "Running database migrations..."
