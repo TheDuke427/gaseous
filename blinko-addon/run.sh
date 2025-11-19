@@ -2,10 +2,6 @@
 set -e
 
 echo "=== Starting Blinko Add-on ==="
-echo "=== Environment Debug ==="
-env | grep -i ingress || echo "No INGRESS env vars found"
-echo "Checking for token file..."
-ls -la /data/ 2>/dev/null || echo "Cannot list /data/"
 
 # Read configuration from options.json
 OPTIONS_FILE="/data/options.json"
@@ -18,20 +14,13 @@ else
     EXTERNAL_URL=""
 fi
 
-# Try multiple methods to detect ingress
-if [ -f "/data/token" ]; then
-    TOKEN=$(cat /data/token)
-    BASE_URL="http://homeassistant.local:8123/api/hassio_ingress/${TOKEN}"
-    echo "Ingress token file found, using URL: ${BASE_URL}"
-elif [ -n "${INGRESS_TOKEN}" ]; then
-    BASE_URL="http://homeassistant.local:8123/api/hassio_ingress/${INGRESS_TOKEN}"
-    echo "Ingress token env var found, using URL: ${BASE_URL}"
-elif [ -n "${EXTERNAL_URL}" ]; then
+# Determine the base URL
+if [ -n "${EXTERNAL_URL}" ]; then
     BASE_URL="${EXTERNAL_URL}"
     echo "Using external URL: ${BASE_URL}"
 else
     BASE_URL="http://localhost:1111"
-    echo "No ingress or external URL, using: ${BASE_URL}"
+    echo "No external URL configured, using: ${BASE_URL}"
 fi
 
 # Create PostgreSQL directory
@@ -68,10 +57,9 @@ export NEXTAUTH_URL="${BASE_URL}"
 export NEXT_PUBLIC_BASE_URL="${BASE_URL}"
 export DATABASE_URL="postgresql://blinkouser:blinkopass@localhost:5432/blinko"
 
-echo "=== Final Configuration ==="
+echo "Final environment variables:"
 echo "  NEXTAUTH_URL=${NEXTAUTH_URL}"
 echo "  NEXT_PUBLIC_BASE_URL=${NEXT_PUBLIC_BASE_URL}"
-echo "=========================="
 
 # Run Prisma migrations to create tables
 echo "Running database migrations..."
