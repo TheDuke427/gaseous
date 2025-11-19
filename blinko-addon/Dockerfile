@@ -1,10 +1,10 @@
 ARG BUILD_FROM
 FROM blinkospace/blinko:latest
 
-# Install MariaDB
+# Install PostgreSQL
 RUN apk add --no-cache \
-    mariadb \
-    mariadb-client \
+    postgresql \
+    postgresql-contrib \
     bash
 
 # Copy run script
