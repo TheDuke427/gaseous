@@ -1,6 +1,0 @@
-# Repository configuration
-# Place this file in the root of your GitHub repository
-
-name: Blinko Add-on Repository
-url: https://github.com/YOUR_USERNAME/hassio-addons-blinko
-maintainer: Your Name <your.email@example.com>
