@@ -25,6 +25,9 @@ sleep 5
 su postgres -c "psql -c \"CREATE DATABASE blinko;\"" 2>/dev/null || true
 su postgres -c "psql -c \"CREATE USER blinkouser WITH PASSWORD 'blinkopass';\"" 2>/dev/null || true
 su postgres -c "psql -c \"GRANT ALL PRIVILEGES ON DATABASE blinko TO blinkouser;\"" 2>/dev/null || true
+su postgres -c "psql -d blinko -c \"GRANT ALL ON SCHEMA public TO blinkouser;\"" 2>/dev/null || true
+su postgres -c "psql -d blinko -c \"GRANT CREATE ON SCHEMA public TO blinkouser;\"" 2>/dev/null || true
+su postgres -c "psql -d blinko -c \"ALTER DATABASE blinko OWNER TO blinkouser;\"" 2>/dev/null || true
 
 # Set up data directory
 mkdir -p /data/blinko
