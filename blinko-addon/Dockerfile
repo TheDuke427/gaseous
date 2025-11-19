@@ -1,16 +1,11 @@
 ARG BUILD_FROM
-FROM ${BUILD_FROM}
+FROM blinkospace/blinko:latest
 
 # Install MariaDB
 RUN apk add --no-cache \
     mariadb \
     mariadb-client \
-    curl \
-    nodejs \
-    npm
-
-# Set up environment
-ENV NODE_ENV=production
+    bash
 
 # Copy run script
 COPY run.sh /
