@@ -3,20 +3,24 @@ set -e
 
 echo "=== Starting Blinko Add-on ==="
 
-# Read configuration
-NEXTAUTH_SECRET="${NEXTAUTH_SECRET:-CHANGE_ME_TO_SECURE_RANDOM_STRING}"
-EXTERNAL_URL=$(bashio::config 'external_url')
+# Read configuration from options.json
+OPTIONS_FILE="/data/options.json"
+
+if [ -f "$OPTIONS_FILE" ]; then
+    NEXTAUTH_SECRET=$(jq -r '.nextauth_secret // "CHANGE_ME"' "$OPTIONS_FILE")
+    EXTERNAL_URL=$(jq -r '.external_url // ""' "$OPTIONS_FILE")
+else
+    NEXTAUTH_SECRET="CHANGE_ME_TO_SECURE_RANDOM_STRING"
+    EXTERNAL_URL=""
+fi
 
 # Determine the base URL
 if [ -n "${EXTERNAL_URL}" ]; then
     BASE_URL="${EXTERNAL_URL}"
     echo "Using external URL: ${BASE_URL}"
-elif INGRESS_URL=$(bashio::addon.ingress_url 2>&1); then
-    BASE_URL="${INGRESS_URL}"
-    echo "Ingress detected, using URL: ${BASE_URL}"
 else
     BASE_URL="http://localhost:1111"
-    echo "No external URL or ingress, using URL: ${BASE_URL}"
+    echo "No external URL configured, using: ${BASE_URL}"
 fi
 
 # Create PostgreSQL directory
