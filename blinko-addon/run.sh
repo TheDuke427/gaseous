@@ -6,25 +6,25 @@ NEXTAUTH_SECRET="${NEXTAUTH_SECRET:-CHANGE_ME_TO_SECURE_RANDOM_STRING}"
 
 # Create PostgreSQL directory
 mkdir -p /data/postgres /run/postgresql
-chown postgres:postgres /data/postgres /run/postgresql
+chown -R postgres:postgres /data/postgres /run/postgresql
 
 # Initialize PostgreSQL if needed
 if [ ! -d "/data/postgres/base" ]; then
     echo "Initializing PostgreSQL database..."
-    su-exec postgres initdb -D /data/postgres
+    su postgres -c "initdb -D /data/postgres"
 fi
 
 # Start PostgreSQL
 echo "Starting PostgreSQL..."
-su-exec postgres pg_ctl -D /data/postgres -l /data/postgres/logfile start
+su postgres -c "pg_ctl -D /data/postgres -l /data/postgres/logfile start"
 
 # Wait for PostgreSQL to be ready
 sleep 5
 
 # Create database and user if they don't exist
-su-exec postgres psql -c "CREATE DATABASE blinko;" 2>/dev/null || true
-su-exec postgres psql -c "CREATE USER blinkouser WITH PASSWORD 'blinkopass';" 2>/dev/null || true
-su-exec postgres psql -c "GRANT ALL PRIVILEGES ON DATABASE blinko TO blinkouser;" 2>/dev/null || true
+su postgres -c "psql -c \"CREATE DATABASE blinko;\"" 2>/dev/null || true
+su postgres -c "psql -c \"CREATE USER blinkouser WITH PASSWORD 'blinkopass';\"" 2>/dev/null || true
+su postgres -c "psql -c \"GRANT ALL PRIVILEGES ON DATABASE blinko TO blinkouser;\"" 2>/dev/null || true
 
 # Set up data directory
 mkdir -p /data/blinko
