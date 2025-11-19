@@ -14,8 +14,13 @@ else
     EXTERNAL_URL=""
 fi
 
-# Determine the base URL
-if [ -n "${EXTERNAL_URL}" ]; then
+# Check for ingress token (indicates we're being accessed via ingress)
+if [ -n "${INGRESS_TOKEN}" ]; then
+    # Get the ingress path from Home Assistant
+    INGRESS_ENTRY="/api/hassio_ingress/$(cat /data/token 2>/dev/null || echo '')"
+    BASE_URL="http://homeassistant.local:8123${INGRESS_ENTRY}"
+    echo "Ingress detected, using URL: ${BASE_URL}"
+elif [ -n "${EXTERNAL_URL}" ]; then
     BASE_URL="${EXTERNAL_URL}"
     echo "Using external URL: ${BASE_URL}"
 else
