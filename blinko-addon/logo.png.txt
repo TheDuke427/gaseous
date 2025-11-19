@@ -1,2 +1,0 @@
-Note: Add a logo.png file (512x512 PNG) for the add-on store listing.
-This should be the same or similar to icon.png.
