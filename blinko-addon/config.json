@@ -1,6 +1,6 @@
 {
   "name": "Blinko",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "slug": "blinko-addon",
   "description": "Self-hosted note-taking app with AI capabilities",
   "arch": ["aarch64", "amd64", "armv7"],
@@ -16,9 +16,11 @@
   "ingress_port": 1111,
   "panel_icon": "mdi:note-text",
   "options": {
-    "nextauth_secret": "CHANGE_ME_TO_SECURE_RANDOM_STRING"
+    "nextauth_secret": "CHANGE_ME_TO_SECURE_RANDOM_STRING",
+    "external_url": ""
   },
   "schema": {
-    "nextauth_secret": "str"
+    "nextauth_secret": "str",
+    "external_url": "str?"
   }
 }
