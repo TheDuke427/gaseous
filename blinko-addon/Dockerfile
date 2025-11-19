@@ -1,11 +1,12 @@
 ARG BUILD_FROM
 FROM blinkospace/blinko:latest
 
-# Install PostgreSQL
+# Install PostgreSQL and jq for JSON parsing
 RUN apk add --no-cache \
     postgresql \
     postgresql-contrib \
-    bash
+    bash \
+    jq
 
 # Copy run script
 COPY run.sh /
