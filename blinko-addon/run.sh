@@ -4,29 +4,27 @@ set -e
 # Read configuration
 NEXTAUTH_SECRET="${NEXTAUTH_SECRET:-CHANGE_ME_TO_SECURE_RANDOM_STRING}"
 
-# Create socket directory for MariaDB
-mkdir -p /run/mysqld
-chown mysql:mysql /run/mysqld
+# Create PostgreSQL directory
+mkdir -p /data/postgres /run/postgresql
+chown postgres:postgres /data/postgres /run/postgresql
 
-# Initialize MariaDB if needed
-if [ ! -d "/data/mysql" ]; then
-    echo "Initializing MariaDB database..."
-    mkdir -p /data/mysql
-    mariadb-install-db --user=mysql --datadir=/data/mysql
+# Initialize PostgreSQL if needed
+if [ ! -d "/data/postgres/base" ]; then
+    echo "Initializing PostgreSQL database..."
+    su-exec postgres initdb -D /data/postgres
 fi
 
-# Start MariaDB
-echo "Starting MariaDB..."
-mariadbd --datadir=/data/mysql --user=mysql &
+# Start PostgreSQL
+echo "Starting PostgreSQL..."
+su-exec postgres pg_ctl -D /data/postgres -l /data/postgres/logfile start
 
-# Wait for MariaDB to be ready
-sleep 10
+# Wait for PostgreSQL to be ready
+sleep 5
 
 # Create database and user if they don't exist
-mariadb -e "CREATE DATABASE IF NOT EXISTS blinko;" 2>/dev/null || true
-mariadb -e "CREATE USER IF NOT EXISTS 'blinkouser'@'localhost' IDENTIFIED BY 'blinkopass';" 2>/dev/null || true
-mariadb -e "GRANT ALL PRIVILEGES ON blinko.* TO 'blinkouser'@'localhost';" 2>/dev/null || true
-mariadb -e "FLUSH PRIVILEGES;" 2>/dev/null || true
+su-exec postgres psql -c "CREATE DATABASE blinko;" 2>/dev/null || true
+su-exec postgres psql -c "CREATE USER blinkouser WITH PASSWORD 'blinkopass';" 2>/dev/null || true
+su-exec postgres psql -c "GRANT ALL PRIVILEGES ON DATABASE blinko TO blinkouser;" 2>/dev/null || true
 
 # Set up data directory
 mkdir -p /data/blinko
@@ -35,7 +33,7 @@ mkdir -p /data/blinko
 export NODE_ENV=production
 export NEXTAUTH_URL=http://localhost:1111
 export NEXT_PUBLIC_BASE_URL=http://localhost:1111
-export DATABASE_URL="mysql://blinkouser:blinkopass@localhost:3306/blinko"
+export DATABASE_URL="postgresql://blinkouser:blinkopass@localhost:5432/blinko"
 
 # Start Blinko
 echo "Starting Blinko..."
