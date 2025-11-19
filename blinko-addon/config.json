@@ -1,7 +1,7 @@
 {
   "name": "Blinko",
   "version": "1.0.0",
-  "slug": "blinko",
+  "slug": "blinko-addon",
   "description": "Self-hosted note-taking app with AI capabilities",
   "arch": ["aarch64", "amd64", "armv7"],
   "startup": "application",
@@ -17,6 +17,5 @@
   },
   "schema": {
     "nextauth_secret": "str"
-  },
-  "image": "ghcr.io/home-assistant/{arch}-addon-blinko"
+  }
 }
