@@ -12,10 +12,8 @@
   "ports_description": {
     "1111/tcp": "Web interface"
   },
-  "ingress": true,
-  "ingress_port": 1111,
-  "ingress_stream": true,
   "panel_icon": "mdi:note-text",
+  "webui": "http://[HOST]:1111",
   "options": {
     "nextauth_secret": "CHANGE_ME_TO_SECURE_RANDOM_STRING",
     "external_url": ""
