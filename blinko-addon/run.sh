@@ -35,7 +35,11 @@ export NEXTAUTH_URL=http://localhost:1111
 export NEXT_PUBLIC_BASE_URL=http://localhost:1111
 export DATABASE_URL="postgresql://blinkouser:blinkopass@localhost:5432/blinko"
 
+# Run Prisma migrations to create tables
+echo "Running database migrations..."
+cd /app
+npx prisma migrate deploy
+
 # Start Blinko
 echo "Starting Blinko..."
-cd /app
 exec node server/index.js
