@@ -1,0 +1,40 @@
+{
+  "name": "IRC Client with DCC",
+  "version": "1.0.0",
+  "slug": "irc-client-dcc",
+  "description": "IRC client with DCC file transfer capabilities",
+  "arch": ["armhf", "armv7", "aarch64", "amd64", "i386"],
+  "startup": "application",
+  "boot": "manual",
+  "init": false,
+  "ports": {
+    "6667/tcp": 6667,
+    "6697/tcp": 6697
+  },
+  "ports_description": {
+    "6667/tcp": "Standard IRC port",
+    "6697/tcp": "IRC SSL port"
+  },
+  "map": ["media:rw"],
+  "options": {
+    "irc_server": "irc.libera.chat",
+    "irc_port": 6667,
+    "irc_nick": "HASSuser",
+    "irc_username": "homeassistant",
+    "irc_realname": "Home Assistant IRC Client",
+    "use_ssl": "no",
+    "dcc_download_path": "/media/irc-downloads",
+    "auto_channels": []
+  },
+  "schema": {
+    "irc_server": "str",
+    "irc_port": "port",
+    "irc_nick": "str",
+    "irc_username": "str",
+    "irc_realname": "str",
+    "use_ssl": "list(yes|no)",
+    "dcc_download_path": "str",
+    "auto_channels": ["str"]
+  },
+  "image": "ghcr.io/{arch}-addon-irc-client-dcc"
+}
