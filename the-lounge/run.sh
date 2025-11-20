@@ -2,6 +2,7 @@
 
 # Get config values
 DCC_DOWNLOAD_PATH=$(bashio::config 'dcc_download_path')
+ADMIN_PASSWORD=$(bashio::config 'admin_password')
 
 bashio::log.info "Starting The Lounge IRC client..."
 bashio::log.info "DCC downloads will be saved to: ${DCC_DOWNLOAD_PATH}"
@@ -88,10 +89,17 @@ module.exports = {
 EOF
 
     bashio::log.info "Configuration created successfully"
+    
+    # Create admin user
+    bashio::log.info "Creating admin user..."
+    cd /data/thelounge
+    echo -e "${ADMIN_PASSWORD}\n${ADMIN_PASSWORD}" | thelounge add admin
+    bashio::log.info "Admin user created with username: admin"
 fi
 
 # Start The Lounge
 bashio::log.info "Starting web interface on port 9000..."
+bashio::log.info "Login with username: admin"
 bashio::log.info "Access it via the OPEN WEB UI button"
 
 cd /data/thelounge
