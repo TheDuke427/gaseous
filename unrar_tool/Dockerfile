@@ -1,22 +1,18 @@
 ARG BUILD_FROM
 FROM $BUILD_FROM
 
-# Install required packages
-RUN apk add --no-cache \
+# Add edge repository and install unrar
+RUN echo "http://dl-cdn.alpinelinux.org/alpine/edge/community" >> /etc/apk/repositories && \
+    echo "http://dl-cdn.alpinelinux.org/alpine/edge/main" >> /etc/apk/repositories && \
+    apk update && \
+    apk add --no-cache \
+    unrar \
     bash \
     python3 \
-    py3-pip \
-    wget \
-    libstdc++ \
-    libgcc
+    py3-pip
 
-# Download precompiled unrar binary
-RUN cd /tmp && \
-    wget https://www.rarlab.com/rar/rarlinux-x64-700.tar.gz && \
-    tar -xzf rarlinux-x64-700.tar.gz && \
-    cp rar/unrar /usr/bin/unrar && \
-    chmod +x /usr/bin/unrar && \
-    rm -rf /tmp/rar /tmp/rarlinux-x64-700.tar.gz
+# Verify unrar is installed
+RUN which unrar || echo "Warning: unrar not found in PATH"
 
 # Copy the extraction script
 COPY run.sh /
