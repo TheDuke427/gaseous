@@ -9,20 +9,20 @@ bashio::log.info "Downloads will be saved to: ${DOWNLOAD_PATH}"
 # Create download directory
 mkdir -p "${DOWNLOAD_PATH}"
 
-# Create a Python web interface that manages irssi XDCC downloads
+# Create a Python web interface with proper IRC client
 cat > /app.py << 'PYEOF'
 from flask import Flask, render_template_string, request, jsonify
-import subprocess
-import os
+import socket
 import threading
+import os
 import time
+import struct
 
 app = Flask(__name__)
 
 DOWNLOAD_PATH = os.getenv('DOWNLOAD_PATH', '/media/xdcc-downloads')
 
 downloads = []
-active_processes = {}
 
 HTML = """
 <!DOCTYPE html>
@@ -41,12 +41,15 @@ HTML = """
         .downloads { margin-top: 30px; }
         .download-item { background: #2d2d2d; padding: 15px; margin: 10px 0; border-radius: 5px; border-left: 4px solid #4CAF50; }
         .status { display: inline-block; padding: 5px 10px; border-radius: 3px; font-size: 12px; }
-        .status-running { background: #2196F3; }
+        .status-connecting { background: #FF9800; }
+        .status-requesting { background: #2196F3; }
+        .status-downloading { background: #9C27B0; }
         .status-completed { background: #4CAF50; }
         .status-failed { background: #f44336; }
         .files { margin-top: 30px; }
         .file-item { background: #2d2d2d; padding: 10px; margin: 5px 0; border-radius: 3px; }
         .example { color: #888; font-size: 12px; margin-top: 5px; }
+        .progress { margin-top: 5px; color: #888; }
     </style>
 </head>
 <body>
@@ -134,6 +137,7 @@ HTML = """
                     <strong>${d.bot}</strong> - Pack #${d.pack}
                     <span class="status status-${d.status}">${d.status}</span>
                     <div>${d.server} - ${d.channel}</div>
+                    ${d.progress ? '<div class="progress">' + d.progress + '</div>' : ''}
                 </div>
             `).join('');
             document.getElementById('downloadsList').innerHTML = html || '<p>No active downloads</p>';
@@ -148,7 +152,7 @@ HTML = """
             document.getElementById('filesList').innerHTML = html || '<p>No files downloaded yet</p>';
         }
         
-        setInterval(loadDownloads, 5000);
+        setInterval(loadDownloads, 2000);
         loadDownloads();
         loadFiles();
     </script>
@@ -156,62 +160,150 @@ HTML = """
 </html>
 """
 
-def run_xdcc_download(download_id, server, port, nick, channel, bot, pack):
-    """Run irssi to download XDCC pack"""
-    try:
-        # Create irssi config for this download
-        config_dir = f"/tmp/irssi-{download_id}"
-        os.makedirs(config_dir, exist_ok=True)
+class IRCXDCCClient:
+    def __init__(self, download_id, server, port, nick, channel, bot, pack):
+        self.download_id = download_id
+        self.server = server
+        self.port = int(port)
+        self.nick = nick
+        self.channel = channel
+        self.bot = bot
+        self.pack = pack
+        self.sock = None
+        self.running = False
         
-        # Create irssi script to auto-download
-        script = f"""
-/set dcc_download_path {DOWNLOAD_PATH}
-/set dcc_autoget on
-/connect {server} {port}
-/nick {nick}
-/sleep 3000
-/join {channel}
-/sleep 3000
-/msg {bot} xdcc send #{pack}
-/sleep 300000
-/quit
-"""
-        
-        script_path = f"{config_dir}/startup.txt"
-        with open(script_path, 'w') as f:
-            f.write(script)
-        
-        # Run irssi
-        cmd = ['irssi', '--home', config_dir, '--connect', server]
-        process = subprocess.Popen(cmd, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        
-        # Send commands
-        time.sleep(2)
-        if process.poll() is None:
-            process.stdin.write(f"/set dcc_download_path {DOWNLOAD_PATH}\n".encode())
-            process.stdin.write(f"/set dcc_autoget on\n".encode())
-            process.stdin.write(f"/nick {nick}\n".encode())
-            time.sleep(2)
-            process.stdin.write(f"/join {channel}\n".encode())
-            time.sleep(3)
-            process.stdin.write(f"/msg {bot} xdcc send #{pack}\n".encode())
-            process.stdin.flush()
-        
-        # Wait for process or timeout
-        process.wait(timeout=300)
-        
-        # Update status
+    def update_status(self, status, progress=""):
         for d in downloads:
-            if d['id'] == download_id:
-                d['status'] = 'completed'
+            if d['id'] == self.download_id:
+                d['status'] = status
+                d['progress'] = progress
                 break
+    
+    def send(self, msg):
+        self.sock.send(f"{msg}\r\n".encode('utf-8'))
+    
+    def receive_dcc(self, ip, port, filename, filesize):
+        """Handle DCC SEND transfer"""
+        try:
+            self.update_status('downloading', f'Connecting to DCC server...')
+            
+            # Convert IP from integer to dotted notation
+            ip_str = socket.inet_ntoa(struct.pack('!I', ip))
+            
+            # Connect to DCC server
+            dcc_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            dcc_sock.settimeout(30)
+            dcc_sock.connect((ip_str, port))
+            
+            # Download file
+            filepath = os.path.join(DOWNLOAD_PATH, filename)
+            received = 0
+            
+            with open(filepath, 'wb') as f:
+                while received < filesize:
+                    chunk = dcc_sock.recv(8192)
+                    if not chunk:
+                        break
+                    f.write(chunk)
+                    received += len(chunk)
+                    
+                    # Send acknowledgment
+                    dcc_sock.send(struct.pack('!I', received))
+                    
+                    # Update progress
+                    progress_pct = (received / filesize) * 100
+                    self.update_status('downloading', f'{filename}: {progress_pct:.1f}% ({received}/{filesize} bytes)')
+            
+            dcc_sock.close()
+            
+            if received == filesize:
+                self.update_status('completed', f'Downloaded: {filename}')
+                return True
+            else:
+                self.update_status('failed', f'Incomplete download: {received}/{filesize} bytes')
+                return False
                 
-    except Exception as e:
-        print(f"Download error: {e}")
-        for d in downloads:
-            if d['id'] == download_id:
-                d['status'] = 'failed'
-                break
+        except Exception as e:
+            self.update_status('failed', f'DCC error: {str(e)}')
+            return False
+    
+    def run(self):
+        try:
+            self.running = True
+            self.update_status('connecting')
+            
+            # Connect to IRC server
+            self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            self.sock.settimeout(300)
+            self.sock.connect((self.server, self.port))
+            
+            # IRC handshake
+            self.send(f"NICK {self.nick}")
+            self.send(f"USER {self.nick} 0 * :{self.nick}")
+            
+            buffer = ""
+            
+            while self.running:
+                try:
+                    data = self.sock.recv(4096).decode('utf-8', errors='ignore')
+                    if not data:
+                        break
+                    
+                    buffer += data
+                    lines = buffer.split('\r\n')
+                    buffer = lines[-1]
+                    
+                    for line in lines[:-1]:
+                        print(f"IRC: {line}")
+                        
+                        # Handle PING
+                        if line.startswith('PING'):
+                            self.send(f"PONG {line.split()[1]}")
+                        
+                        # Check if connected
+                        elif '001' in line or '376' in line:
+                            self.update_status('requesting')
+                            self.send(f"JOIN {self.channel}")
+                            time.sleep(2)
+                            self.send(f"PRIVMSG {self.bot} :xdcc send #{self.pack}")
+                            self.update_status('requesting', 'XDCC request sent, waiting for response...')
+                        
+                        # DCC SEND offer
+                        elif 'DCC SEND' in line:
+                            parts = line.split()
+                            try:
+                                # Parse DCC SEND message
+                                # Format: :bot!user@host PRIVMSG nick :DCC SEND filename ip port filesize
+                                dcc_idx = parts.index('SEND')
+                                filename = parts[dcc_idx + 1].strip('"')
+                                ip = int(parts[dcc_idx + 2])
+                                port = int(parts[dcc_idx + 3])
+                                filesize = int(parts[dcc_idx + 4])
+                                
+                                self.update_status('downloading', f'Receiving: {filename}')
+                                
+                                if self.receive_dcc(ip, port, filename, filesize):
+                                    self.running = False
+                                    break
+                            except Exception as e:
+                                self.update_status('failed', f'Error parsing DCC: {str(e)}')
+                                print(f"DCC parse error: {e}, line: {line}")
+                
+                except socket.timeout:
+                    self.update_status('failed', 'Timeout waiting for DCC offer')
+                    break
+                except Exception as e:
+                    self.update_status('failed', f'Error: {str(e)}')
+                    break
+            
+            self.sock.close()
+            
+        except Exception as e:
+            self.update_status('failed', f'Connection error: {str(e)}')
+
+def run_xdcc_download(download_id, server, port, nick, channel, bot, pack):
+    client = IRCXDCCClient(download_id, server, port, nick, channel, bot, pack)
+    client.run()
 
 @app.route('/')
 def index():
@@ -235,7 +327,8 @@ def download():
         'channel': channel,
         'bot': bot,
         'pack': pack,
-        'status': 'running'
+        'status': 'connecting',
+        'progress': ''
     })
     
     # Start download in background thread
