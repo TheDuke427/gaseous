@@ -16,9 +16,11 @@
   "webui": "http://[HOST]:[PORT:9000]",
   "map": ["media:rw"],
   "options": {
-    "dcc_download_path": "/media/irc-downloads"
+    "dcc_download_path": "/media/irc-downloads",
+    "admin_password": "homeassistant"
   },
   "schema": {
-    "dcc_download_path": "str"
+    "dcc_download_path": "str",
+    "admin_password": "password"
   }
 }
