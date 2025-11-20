@@ -25,7 +25,7 @@ def extract_rar(rar_file, extract_path, delete_after=False):
         target_dir.mkdir(parents=True, exist_ok=True)
         
         # Extract using unrar
-        cmd = ['unrar', 'x', '-o+', str(rar_file), str(target_dir) + '/']
+        cmd = ['unrar', 'x', '-o+', '-y', str(rar_file), str(target_dir) + '/']
         result = subprocess.run(cmd, capture_output=True, text=True)
         
         if result.returncode == 0:
@@ -71,6 +71,14 @@ def main():
     logger.info("Unrar Tool Started")
     logger.info(f"Monitoring path: {source_path}")
     
+    # Test if unrar is available
+    try:
+        result = subprocess.run(['unrar'], capture_output=True, text=True)
+        logger.info("unrar is available for extraction")
+    except Exception as e:
+        logger.error("unrar is not available! Cannot extract files.")
+        sys.exit(1)
+    
     processed_files = set()
     
     while True:
@@ -89,6 +97,8 @@ def main():
                         logger.warning(f"Failed to process {rar_file}, will retry later")
             
             if not watch_mode:
+                if len(rar_files) == 0:
+                    logger.info("No RAR files found in source path")
                 logger.info("Single run complete. Exiting.")
                 break
             
@@ -108,24 +118,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-```
-
-## Installation Instructions:
-
-1. Create a folder called `unrar-addon` in your Home Assistant `/addons` directory
-2. Create each file above with the exact filename in that folder
-3. Optionally add an `icon.png` file (256x256 pixels) for the add-on icon
-4. In Home Assistant, go to Settings → Add-ons → Add-on Store
-5. Click the three dots menu → Reload
-6. Find "Unrar Tool" in the Local add-ons section
-7. Install and configure it
-
-The folder structure should look like:
-```
-/addons/unrar-addon/
-├── config.yaml
-├── Dockerfile
-├── build.yaml
-├── run.sh
-├── extract.py
-└── icon.png (optional)
