@@ -1,4 +1,4 @@
-#!/usr/bin/with-contenv bashio
+#!/usr/bin/env bashio
 
 # Get configuration from Home Assistant
 TIMEZONE=$(bashio::config 'timezone')
