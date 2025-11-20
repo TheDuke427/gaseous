@@ -9,18 +9,20 @@ bashio::log.info "Downloads will be saved to: ${DOWNLOAD_PATH}"
 # Create download directory
 mkdir -p "${DOWNLOAD_PATH}"
 
-# Create a simple Python web interface for xdccget
+# Create a Python web interface that manages irssi XDCC downloads
 cat > /app.py << 'PYEOF'
 from flask import Flask, render_template_string, request, jsonify
 import subprocess
 import os
-import json
+import threading
+import time
 
 app = Flask(__name__)
 
 DOWNLOAD_PATH = os.getenv('DOWNLOAD_PATH', '/media/xdcc-downloads')
 
 downloads = []
+active_processes = {}
 
 HTML = """
 <!DOCTYPE html>
@@ -33,8 +35,8 @@ HTML = """
         h1 { color: #4CAF50; }
         .form-group { margin: 15px 0; }
         label { display: block; margin-bottom: 5px; font-weight: bold; }
-        input, select { padding: 8px; width: 100%; max-width: 400px; background: #2d2d2d; color: #fff; border: 1px solid #444; }
-        button { padding: 10px 20px; background: #4CAF50; color: white; border: none; cursor: pointer; margin: 5px; }
+        input, select { padding: 8px; width: 100%; max-width: 400px; background: #2d2d2d; color: #fff; border: 1px solid #444; border-radius: 4px; }
+        button { padding: 10px 20px; background: #4CAF50; color: white; border: none; cursor: pointer; margin: 5px; border-radius: 4px; }
         button:hover { background: #45a049; }
         .downloads { margin-top: 30px; }
         .download-item { background: #2d2d2d; padding: 15px; margin: 10px 0; border-radius: 5px; border-left: 4px solid #4CAF50; }
@@ -154,6 +156,63 @@ HTML = """
 </html>
 """
 
+def run_xdcc_download(download_id, server, port, nick, channel, bot, pack):
+    """Run irssi to download XDCC pack"""
+    try:
+        # Create irssi config for this download
+        config_dir = f"/tmp/irssi-{download_id}"
+        os.makedirs(config_dir, exist_ok=True)
+        
+        # Create irssi script to auto-download
+        script = f"""
+/set dcc_download_path {DOWNLOAD_PATH}
+/set dcc_autoget on
+/connect {server} {port}
+/nick {nick}
+/sleep 3000
+/join {channel}
+/sleep 3000
+/msg {bot} xdcc send #{pack}
+/sleep 300000
+/quit
+"""
+        
+        script_path = f"{config_dir}/startup.txt"
+        with open(script_path, 'w') as f:
+            f.write(script)
+        
+        # Run irssi
+        cmd = ['irssi', '--home', config_dir, '--connect', server]
+        process = subprocess.Popen(cmd, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        
+        # Send commands
+        time.sleep(2)
+        if process.poll() is None:
+            process.stdin.write(f"/set dcc_download_path {DOWNLOAD_PATH}\n".encode())
+            process.stdin.write(f"/set dcc_autoget on\n".encode())
+            process.stdin.write(f"/nick {nick}\n".encode())
+            time.sleep(2)
+            process.stdin.write(f"/join {channel}\n".encode())
+            time.sleep(3)
+            process.stdin.write(f"/msg {bot} xdcc send #{pack}\n".encode())
+            process.stdin.flush()
+        
+        # Wait for process or timeout
+        process.wait(timeout=300)
+        
+        # Update status
+        for d in downloads:
+            if d['id'] == download_id:
+                d['status'] = 'completed'
+                break
+                
+    except Exception as e:
+        print(f"Download error: {e}")
+        for d in downloads:
+            if d['id'] == download_id:
+                d['status'] = 'failed'
+                break
+
 @app.route('/')
 def index():
     return render_template_string(HTML)
@@ -168,28 +227,23 @@ def download():
     bot = data.get('bot')
     pack = data.get('pack')
     
-    # Start xdccget in background
-    cmd = [
-        'xdccget',
-        '-d', DOWNLOAD_PATH,
-        '-s', server,
-        '-p', str(port),
-        '-n', nick,
-        f"{channel}::{bot}::#{pack}"
-    ]
+    download_id = len(downloads)
     
-    try:
-        subprocess.Popen(cmd)
-        downloads.append({
-            'server': server,
-            'channel': channel,
-            'bot': bot,
-            'pack': pack,
-            'status': 'running'
-        })
-        return jsonify({'message': f'Download started for pack #{pack} from {bot}'})
-    except Exception as e:
-        return jsonify({'message': f'Error: {str(e)}'}), 500
+    downloads.append({
+        'id': download_id,
+        'server': server,
+        'channel': channel,
+        'bot': bot,
+        'pack': pack,
+        'status': 'running'
+    })
+    
+    # Start download in background thread
+    thread = threading.Thread(target=run_xdcc_download, args=(download_id, server, port, nick, channel, bot, pack))
+    thread.daemon = True
+    thread.start()
+    
+    return jsonify({'message': f'Download started for pack #{pack} from {bot}'})
 
 @app.route('/downloads')
 def get_downloads():
