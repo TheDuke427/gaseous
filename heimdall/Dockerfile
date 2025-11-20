@@ -59,8 +59,15 @@ RUN composer install --no-interaction --no-progress
 RUN cp .env.example .env && \
     php artisan key:generate
 
-# Now remove dev dependencies after key generation
-RUN composer install --no-dev --optimize-autoloader --no-interaction --no-progress
+# Remove IDE Helper from AppServiceProvider to prevent issues
+RUN sed -i '/Barryvdh\\LaravelIdeHelper\\IdeHelperServiceProvider::class/d' /heimdall/app/Providers/AppServiceProvider.php
+
+# Clear config cache
+RUN php artisan config:clear
+
+# Now remove dev dependencies after key generation (skip scripts to avoid IDE Helper issue)
+RUN composer install --no-dev --optimize-autoloader --no-interaction --no-progress --no-scripts && \
+    composer dump-autoload --optimize
 
 # Set permissions
 RUN chown -R heimdall:heimdall /heimdall && \
