@@ -51,7 +51,7 @@ HTML = """
         .file-item { background: #2d2d2d; padding: 10px; margin: 5px 0; border-radius: 3px; }
         .example { color: #888; font-size: 12px; margin-top: 5px; }
         .progress { margin-top: 5px; color: #888; font-size: 12px; }
-        .log { background: #1a1a1a; padding: 10px; margin-top: 5px; font-family: monospace; font-size: 11px; max-height: 100px; overflow-y: auto; }
+        .log { background: #1a1a1a; padding: 10px; margin-top: 5px; font-family: monospace; font-size: 11px; max-height: 150px; overflow-y: auto; }
     </style>
 </head>
 <body>
@@ -86,7 +86,7 @@ HTML = """
             <div class="form-group">
                 <label>Bot Name:</label>
                 <input type="text" id="bot" placeholder="[EWG]-[TB-IKR09" required>
-                <div class="example">Example: [EWG]-[TB-IKR09</div>
+                <div class="example">Example: [EWG]-[TB-IKR09 (case sensitive!)</div>
             </div>
             
             <div class="form-group">
@@ -140,7 +140,7 @@ HTML = """
                     <span class="status status-${d.status}">${d.status}</span>
                     <div>${d.server} - ${d.channel}</div>
                     ${d.progress ? '<div class="progress">' + d.progress + '</div>' : ''}
-                    ${d.logs ? '<div class="log">' + d.logs.join('<br>') + '</div>' : ''}
+                    ${d.logs && d.logs.length > 0 ? '<div class="log">' + d.logs.join('<br>') + '</div>' : ''}
                 </div>
             `).join('');
             document.getElementById('downloadsList').innerHTML = html || '<p>No active downloads</p>';
@@ -177,11 +177,13 @@ class IRCXDCCClient:
         self.logs = []
         
     def log(self, msg):
-        self.logs.append(msg)
+        timestamp = time.strftime("%H:%M:%S")
+        log_msg = f"[{timestamp}] {msg}"
+        self.logs.append(log_msg)
         print(f"[DL-{self.download_id}] {msg}")
         for d in downloads:
             if d['id'] == self.download_id:
-                d['logs'] = self.logs[-10:]  # Keep last 10 log entries
+                d['logs'] = self.logs[-15:]  # Keep last 15 log entries
                 break
     
     def update_status(self, status, progress=""):
@@ -193,76 +195,103 @@ class IRCXDCCClient:
     
     def send(self, msg):
         self.sock.send(f"{msg}\r\n".encode('utf-8'))
-        self.log(f"SENT: {msg}")
+        self.log(f"→ {msg}")
     
     def receive_dcc(self, ip, port, filename, filesize):
-        """Handle DCC SEND transfer"""
-        try:
-            self.update_status('downloading', f'Connecting to DCC server...')
-            
-            # Convert IP from integer to dotted notation
-            ip_str = socket.inet_ntoa(struct.pack('!I', ip))
-            self.log(f"Connecting to DCC: {ip_str}:{port}")
-            
-            # Connect to DCC server
-            dcc_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            dcc_sock.settimeout(30)
-            dcc_sock.connect((ip_str, port))
-            
-            self.log(f"DCC connected, downloading {filename} ({filesize} bytes)")
-            
-            # Download file
-            filepath = os.path.join(DOWNLOAD_PATH, filename)
-            received = 0
-            
-            with open(filepath, 'wb') as f:
-                while received < filesize:
-                    chunk = dcc_sock.recv(8192)
-                    if not chunk:
-                        break
-                    f.write(chunk)
-                    received += len(chunk)
-                    
-                    # Send acknowledgment
-                    dcc_sock.send(struct.pack('!I', received))
-                    
-                    # Update progress
-                    progress_pct = (received / filesize) * 100
-                    self.update_status('downloading', f'{filename}: {progress_pct:.1f}% ({received}/{filesize} bytes)')
-            
-            dcc_sock.close()
-            
-            if received == filesize:
-                self.log(f"Download complete: {filename}")
-                self.update_status('completed', f'Downloaded: {filename}')
-                return True
-            else:
-                self.log(f"Incomplete download: {received}/{filesize}")
-                self.update_status('failed', f'Incomplete download: {received}/{filesize} bytes')
-                return False
+        """Handle DCC SEND transfer with retries"""
+        max_retries = 3
+        
+        for attempt in range(max_retries):
+            try:
+                if attempt > 0:
+                    self.log(f"Retry attempt {attempt + 1}/{max_retries}")
+                    time.sleep(2)
                 
-        except Exception as e:
-            self.log(f"DCC error: {str(e)}")
-            self.update_status('failed', f'DCC error: {str(e)}')
-            return False
+                self.update_status('downloading', f'Connecting to DCC server (attempt {attempt + 1})...')
+                
+                # Convert IP from integer to dotted notation
+                ip_str = socket.inet_ntoa(struct.pack('!I', ip))
+                self.log(f"Connecting to DCC: {ip_str}:{port}")
+                
+                # Connect to DCC server
+                dcc_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                dcc_sock.settimeout(60)
+                
+                # Try to connect with longer timeout
+                dcc_sock.connect((ip_str, port))
+                
+                self.log(f"DCC connected! Downloading {filename} ({filesize} bytes / {filesize/1024/1024:.1f} MB)")
+                
+                # Download file
+                filepath = os.path.join(DOWNLOAD_PATH, filename)
+                received = 0
+                last_update = time.time()
+                
+                with open(filepath, 'wb') as f:
+                    while received < filesize:
+                        chunk = dcc_sock.recv(8192)
+                        if not chunk:
+                            self.log("Connection closed by remote")
+                            break
+                        f.write(chunk)
+                        received += len(chunk)
+                        
+                        # Send acknowledgment
+                        try:
+                            dcc_sock.send(struct.pack('!I', received))
+                        except:
+                            pass  # Some bots don't need acks
+                        
+                        # Update progress every 2 seconds
+                        now = time.time()
+                        if now - last_update > 2:
+                            progress_pct = (received / filesize) * 100
+                            mb_received = received / 1024 / 1024
+                            mb_total = filesize / 1024 / 1024
+                            self.update_status('downloading', f'{filename}: {progress_pct:.1f}% ({mb_received:.1f}/{mb_total:.1f} MB)')
+                            last_update = now
+                
+                dcc_sock.close()
+                
+                if received == filesize:
+                    self.log(f"✓ Download complete: {filename}")
+                    self.update_status('completed', f'Downloaded: {filename} ({filesize/1024/1024:.1f} MB)')
+                    return True
+                else:
+                    self.log(f"⚠ Incomplete: {received}/{filesize} bytes")
+                    if attempt < max_retries - 1:
+                        continue
+                    self.update_status('failed', f'Incomplete: {received}/{filesize} bytes')
+                    return False
+                    
+            except socket.timeout:
+                self.log(f"⚠ Timeout on attempt {attempt + 1}")
+                if attempt < max_retries - 1:
+                    continue
+                self.update_status('failed', 'Connection timeout')
+                return False
+            except ConnectionRefusedError:
+                self.log(f"⚠ Connection refused on attempt {attempt + 1}")
+                if attempt < max_retries - 1:
+                    continue
+                self.update_status('failed', 'Connection refused - bot may be busy')
+                return False
+            except Exception as e:
+                self.log(f"⚠ DCC error on attempt {attempt + 1}: {str(e)}")
+                if attempt < max_retries - 1:
+                    continue
+                self.update_status('failed', f'DCC error: {str(e)}')
+                return False
+        
+        return False
     
     def parse_dcc_send(self, line):
-        """Parse DCC SEND message with multiple format support"""
-        self.log(f"Parsing DCC line: {line}")
+        """Parse DCC SEND message"""
+        self.log(f"Parsing DCC: {line[:100]}...")
         
         try:
-            # Try to find DCC SEND in the line
-            if 'DCC SEND' not in line.upper():
-                return None
-            
-            # Extract the DCC SEND portion (after :DCC SEND or DCC SEND)
-            # Format examples:
-            # :bot!user@host PRIVMSG nick :DCC SEND filename ip port filesize
-            # :bot!user@host PRIVMSG nick :DCC SEND "filename with spaces" ip port filesize
-            
             # Find the actual message content after PRIVMSG
             if ':' in line and 'PRIVMSG' in line:
-                # Split on : to get message part
                 parts = line.split(':', 2)
                 if len(parts) >= 3:
                     message = parts[2]
@@ -271,10 +300,7 @@ class IRCXDCCClient:
             else:
                 message = line
             
-            self.log(f"Message part: {message}")
-            
             # Use regex to parse DCC SEND
-            # Pattern: DCC SEND "?filename"? ip port filesize
             pattern = r'DCC SEND\s+("([^"]+)"|(\S+))\s+(\d+)\s+(\d+)\s+(\d+)'
             match = re.search(pattern, message, re.IGNORECASE)
             
@@ -284,24 +310,11 @@ class IRCXDCCClient:
                 port = int(match.group(5))
                 filesize = int(match.group(6))
                 
-                self.log(f"Parsed: file={filename}, ip={ip}, port={port}, size={filesize}")
+                self.log(f"✓ Parsed: {filename} ({filesize/1024/1024:.1f} MB) @ {port}")
                 return (filename, ip, port, filesize)
-            else:
-                self.log(f"Regex didn't match. Trying simple split...")
-                # Fallback: simple split
-                parts = message.split()
-                if 'SEND' in parts:
-                    idx = parts.index('SEND')
-                    if len(parts) >= idx + 5:
-                        filename = parts[idx + 1].strip('"')
-                        ip = int(parts[idx + 2])
-                        port = int(parts[idx + 3])
-                        filesize = int(parts[idx + 4])
-                        self.log(f"Fallback parsed: file={filename}, ip={ip}, port={port}, size={filesize}")
-                        return (filename, ip, port, filesize)
                 
         except Exception as e:
-            self.log(f"Parse error: {str(e)}")
+            self.log(f"✗ Parse error: {str(e)}")
         
         return None
     
@@ -309,7 +322,7 @@ class IRCXDCCClient:
         try:
             self.running = True
             self.update_status('connecting')
-            self.log(f"Connecting to {self.server}:{self.port}")
+            self.log(f"Connecting to {self.server}:{self.port} as {self.nick}")
             
             # Connect to IRC server
             self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -321,6 +334,8 @@ class IRCXDCCClient:
             self.send(f"USER {self.nick} 0 * :{self.nick}")
             
             buffer = ""
+            joined = False
+            requested = False
             
             while self.running:
                 try:
@@ -333,37 +348,54 @@ class IRCXDCCClient:
                     buffer = lines[-1]
                     
                     for line in lines[:-1]:
-                        self.log(f"< {line}")
+                        # Don't log every line to avoid spam
+                        if 'PING' not in line and 'PONG' not in line:
+                            self.log(f"← {line[:100]}")
                         
                         # Handle PING
                         if line.startswith('PING'):
                             self.send(f"PONG {line.split()[1]}")
                         
                         # Check if connected
-                        elif '001' in line or '376' in line:
+                        elif ('001' in line or '376' in line) and not joined:
                             self.update_status('requesting')
+                            self.log(f"Joining {self.channel}")
                             self.send(f"JOIN {self.channel}")
-                            time.sleep(2)
+                            joined = True
+                        
+                        # Joined channel
+                        elif '366' in line and not requested:
+                            self.log(f"Requesting pack #{self.pack} from {self.bot}")
                             self.send(f"PRIVMSG {self.bot} :xdcc send #{self.pack}")
-                            self.update_status('requesting', 'XDCC request sent, waiting for response...')
+                            self.update_status('requesting', 'XDCC request sent, waiting for bot response...')
+                            requested = True
                         
                         # DCC SEND offer
                         elif 'DCC SEND' in line.upper():
                             result = self.parse_dcc_send(line)
                             if result:
                                 filename, ip, port, filesize = result
-                                self.update_status('downloading', f'Receiving: {filename}')
+                                self.update_status('downloading', f'Starting download: {filename}')
                                 
                                 if self.receive_dcc(ip, port, filename, filesize):
                                     self.running = False
                                     break
                             else:
-                                self.update_status('failed', 'Could not parse DCC SEND message')
+                                self.update_status('failed', 'Could not parse DCC SEND')
                                 self.running = False
+                        
+                        # Bot messages
+                        elif 'PRIVMSG' in line and self.bot in line:
+                            # Extract message
+                            if ':' in line:
+                                msg_parts = line.split(':', 2)
+                                if len(msg_parts) >= 3:
+                                    bot_msg = msg_parts[2]
+                                    self.log(f"Bot says: {bot_msg}")
                 
                 except socket.timeout:
-                    self.log("Timeout")
-                    self.update_status('failed', 'Timeout waiting for DCC offer')
+                    self.log("Timeout waiting for DCC offer")
+                    self.update_status('failed', 'Timeout - bot may be busy or pack unavailable')
                     break
                 except Exception as e:
                     self.log(f"Error: {str(e)}")
