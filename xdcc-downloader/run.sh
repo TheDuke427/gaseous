@@ -2,9 +2,6 @@
 
 # Get config values
 DOWNLOAD_PATH=$(bashio::config 'download_path')
-IRC_SERVER=$(bashio::config 'irc_server')
-IRC_PORT=$(bashio::config 'irc_port')
-IRC_NICK=$(bashio::config 'irc_nick')
 
 bashio::log.info "Starting XDCC Downloader..."
 bashio::log.info "Downloads will be saved to: ${DOWNLOAD_PATH}"
@@ -22,9 +19,6 @@ import json
 app = Flask(__name__)
 
 DOWNLOAD_PATH = os.getenv('DOWNLOAD_PATH', '/media/xdcc-downloads')
-IRC_SERVER = os.getenv('IRC_SERVER', 'irc.rizon.net')
-IRC_PORT = os.getenv('IRC_PORT', '6667')
-IRC_NICK = os.getenv('IRC_NICK', 'xdcc-user')
 
 downloads = []
 
@@ -57,12 +51,25 @@ HTML = """
     <div class="container">
         <h1>XDCC Downloader</h1>
         
-        <div class="form-group">
-            <label>Server: {{ server }}:{{ port }} | Nick: {{ nick }}</label>
-        </div>
-        
         <h2>Download File</h2>
         <form id="downloadForm">
+            <div class="form-group">
+                <label>IRC Server:</label>
+                <input type="text" id="server" value="irc.rizon.net" required>
+                <div class="example">Example: irc.rizon.net, irc.libera.chat</div>
+            </div>
+            
+            <div class="form-group">
+                <label>Port:</label>
+                <input type="number" id="port" value="6667" required>
+            </div>
+            
+            <div class="form-group">
+                <label>Nickname:</label>
+                <input type="text" id="nick" value="xdcc-user" required>
+                <div class="example">Your IRC nickname</div>
+            </div>
+            
             <div class="form-group">
                 <label>IRC Channel (with #):</label>
                 <input type="text" id="channel" placeholder="#ELITEWAREZ" required>
@@ -99,6 +106,9 @@ HTML = """
     <script>
         document.getElementById('downloadForm').onsubmit = async (e) => {
             e.preventDefault();
+            const server = document.getElementById('server').value;
+            const port = document.getElementById('port').value;
+            const nick = document.getElementById('nick').value;
             const channel = document.getElementById('channel').value;
             const bot = document.getElementById('bot').value;
             const pack = document.getElementById('pack').value;
@@ -106,7 +116,7 @@ HTML = """
             const response = await fetch('/download', {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({channel, bot, pack})
+                body: JSON.stringify({server, port, nick, channel, bot, pack})
             });
             
             const result = await response.json();
@@ -121,7 +131,7 @@ HTML = """
                 <div class="download-item">
                     <strong>${d.bot}</strong> - Pack #${d.pack}
                     <span class="status status-${d.status}">${d.status}</span>
-                    <div>${d.channel}</div>
+                    <div>${d.server} - ${d.channel}</div>
                 </div>
             `).join('');
             document.getElementById('downloadsList').innerHTML = html || '<p>No active downloads</p>';
@@ -146,11 +156,14 @@ HTML = """
 
 @app.route('/')
 def index():
-    return render_template_string(HTML, server=IRC_SERVER, port=IRC_PORT, nick=IRC_NICK)
+    return render_template_string(HTML)
 
 @app.route('/download', methods=['POST'])
 def download():
     data = request.json
+    server = data.get('server')
+    port = data.get('port')
+    nick = data.get('nick')
     channel = data.get('channel')
     bot = data.get('bot')
     pack = data.get('pack')
@@ -159,15 +172,16 @@ def download():
     cmd = [
         'xdccget',
         '-d', DOWNLOAD_PATH,
-        '-s', IRC_SERVER,
-        '-p', IRC_PORT,
-        '-n', IRC_NICK,
+        '-s', server,
+        '-p', str(port),
+        '-n', nick,
         f"{channel}::{bot}::#{pack}"
     ]
     
     try:
         subprocess.Popen(cmd)
         downloads.append({
+            'server': server,
             'channel': channel,
             'bot': bot,
             'pack': pack,
@@ -198,9 +212,6 @@ pip3 install --no-cache-dir flask --break-system-packages
 
 # Export environment variables for the app
 export DOWNLOAD_PATH="${DOWNLOAD_PATH}"
-export IRC_SERVER="${IRC_SERVER}"
-export IRC_PORT="${IRC_PORT}"
-export IRC_NICK="${IRC_NICK}"
 
 bashio::log.info "Starting web interface on port 8080..."
 exec python3 /app.py
