@@ -204,5 +204,5 @@ RUN mkdir -p /var/log/php83 && \
 # Expose ports
 EXPOSE 80 443
 
-# Set entrypoint
-ENTRYPOINT ["/run.sh"]
+# Use CMD for Home Assistant compatibility
+CMD ["/run.sh"]
