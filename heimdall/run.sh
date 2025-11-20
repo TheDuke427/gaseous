@@ -1,89 +1,70 @@
 #!/usr/bin/env bashio
 
-# Get configuration from Home Assistant with defaults
-TIMEZONE=$(bashio::config 'timezone' 'America/New_York')
-ALLOW_INTERNAL=$(bashio::config 'allow_internal_requests' 'true')
-USE_SSL=$(bashio::config 'ssl' 'false')
-CERTFILE=$(bashio::config 'certfile' 'fullchain.pem')
-KEYFILE=$(bashio::config 'keyfile' 'privkey.pem')
+# Use defaults for all configuration to avoid API issues
+TIMEZONE="America/New_York"
+ALLOW_INTERNAL="true"
+USE_SSL="false"
+CERTFILE="fullchain.pem"
+KEYFILE="privkey.pem"
+
+# Try to get config from API, but don't fail if it doesn't work
+if bashio::config.has_value 'timezone'; then
+    TIMEZONE=$(bashio::config 'timezone')
+fi
+if bashio::config.has_value 'allow_internal_requests'; then
+    ALLOW_INTERNAL=$(bashio::config 'allow_internal_requests')
+fi
+if bashio::config.has_value 'ssl'; then
+    USE_SSL=$(bashio::config 'ssl')
+fi
+if bashio::config.has_value 'certfile'; then
+    CERTFILE=$(bashio::config 'certfile')
+fi
+if bashio::config.has_value 'keyfile'; then
+    KEYFILE=$(bashio::config 'keyfile')
+fi
+
+bashio::log.info "Configuration loaded - Timezone: ${TIMEZONE}, SSL: ${USE_SSL}"
 
 # Set timezone
-bashio::log.info "Setting timezone to ${TIMEZONE}..."
+bashio::log.info "Setting timezone..."
 ln -snf /usr/share/zoneinfo/${TIMEZONE} /etc/localtime
 echo "${TIMEZONE}" > /etc/timezone
 
-# Create persistent storage directory if it doesn't exist
-if [ ! -d "/config/heimdall" ]; then
-    bashio::log.info "Creating Heimdall config directory..."
-    mkdir -p /config/heimdall
-fi
-
-# Setup database first
+# Create persistent storage directory
+bashio::log.info "Creating config directories..."
 mkdir -p /config/heimdall/database
-if [ ! -f "/config/heimdall/database/app.sqlite" ]; then
-    bashio::log.info "Creating initial database..."
-    touch /config/heimdall/database/app.sqlite
-    chmod 664 /config/heimdall/database/app.sqlite
-fi
-
-# Link database
-rm -f /heimdall/database/app.sqlite
-ln -s /config/heimdall/database/app.sqlite /heimdall/database/app.sqlite
-
-# Setup storage directories
-bashio::log.info "Setting up persistent storage..."
 mkdir -p /config/heimdall/backgrounds
 mkdir -p /config/heimdall/icons
 mkdir -p /config/heimdall/logs
-mkdir -p /heimdall/storage/app/public
 
-# Link storage directories
+# Setup database
+bashio::log.info "Setting up database..."
+if [ ! -f "/config/heimdall/database/app.sqlite" ]; then
+    touch /config/heimdall/database/app.sqlite
+fi
+rm -f /heimdall/database/app.sqlite
+ln -s /config/heimdall/database/app.sqlite /heimdall/database/app.sqlite
+
+# Setup storage
+bashio::log.info "Setting up storage links..."
+mkdir -p /heimdall/storage/app/public
 rm -rf /heimdall/storage/app/public/backgrounds
 ln -s /config/heimdall/backgrounds /heimdall/storage/app/public/backgrounds
-
 rm -rf /heimdall/storage/app/public/icons
 ln -s /config/heimdall/icons /heimdall/storage/app/public/icons
-
 rm -rf /heimdall/storage/logs
 ln -s /config/heimdall/logs /heimdall/storage/logs
 
-# Update .env file with configuration
-bashio::log.info "Updating Heimdall configuration..."
+# Update .env file
+bashio::log.info "Configuring application..."
 sed -i "s|APP_URL=.*|APP_URL=http://localhost|g" /heimdall/.env
-
-# Remove any existing ALLOW_INTERNAL_REQUESTS lines first
 sed -i '/ALLOW_INTERNAL_REQUESTS/d' /heimdall/.env
+echo "ALLOW_INTERNAL_REQUESTS=${ALLOW_INTERNAL}" >> /heimdall/.env
 
-# Set ALLOW_INTERNAL_REQUESTS in .env
-if [ "${ALLOW_INTERNAL}" = "true" ]; then
-    echo "ALLOW_INTERNAL_REQUESTS=true" >> /heimdall/.env
-else
-    echo "ALLOW_INTERNAL_REQUESTS=false" >> /heimdall/.env
-fi
-
-# Handle SSL certificates
-if [ "${USE_SSL}" = "true" ]; then
-    bashio::log.info "SSL enabled, setting up certificates..."
-    
-    # Copy certificates from Home Assistant SSL directory
-    if [ -f "/ssl/${CERTFILE}" ] && [ -f "/ssl/${KEYFILE}" ]; then
-        cp /ssl/${CERTFILE} /ssl/fullchain.pem
-        cp /ssl/${KEYFILE} /ssl/privkey.pem
-        bashio::log.info "SSL certificates copied successfully"
-    else
-        bashio::log.warning "SSL certificates not found, generating self-signed certificates..."
-        openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
-            -keyout /ssl/privkey.pem \
-            -out /ssl/fullchain.pem \
-            -subj "/C=US/ST=State/L=City/O=Heimdall/CN=localhost"
-    fi
-else
-    bashio::log.info "SSL disabled"
-    # Remove SSL server block from nginx config if SSL is disabled
-    # Use a simpler approach - comment out the SSL server block
-    if [ -f "/etc/nginx/http.d/heimdall.conf" ]; then
-        # Create a new config without SSL
-        cat > /etc/nginx/http.d/heimdall.conf << 'EOF'
+# Configure nginx
+bashio::log.info "Configuring nginx..."
+cat > /etc/nginx/http.d/heimdall.conf << 'EOF'
 server {
     listen 80 default_server;
     listen [::]:80 default_server;
@@ -118,51 +99,34 @@ server {
     }
 }
 EOF
-    fi
-fi
 
-# Create searchproviders.yaml if it doesn't exist
-if [ ! -f "/config/heimdall/searchproviders.yaml" ]; then
-    bashio::log.info "Creating searchproviders.yaml..."
-    if [ -f "/heimdall/storage/app/searchproviders.yaml" ]; then
-        cp /heimdall/storage/app/searchproviders.yaml /config/heimdall/searchproviders.yaml
-    fi
-fi
+# Set minimal permissions (skip recursive chmod which can be slow)
+bashio::log.info "Setting basic permissions..."
+chown heimdall:heimdall /config/heimdall/database/app.sqlite
+chown -R heimdall:heimdall /heimdall/storage
+chown -R heimdall:heimdall /heimdall/bootstrap/cache
+chmod 775 /config/heimdall/database/app.sqlite
 
-# Link searchproviders.yaml if it exists
-if [ -f "/config/heimdall/searchproviders.yaml" ]; then
-    rm -f /heimdall/storage/app/searchproviders.yaml
-    ln -s /config/heimdall/searchproviders.yaml /heimdall/storage/app/searchproviders.yaml
-fi
-
-# Set correct permissions
-bashio::log.info "Setting permissions..."
-chown -R heimdall:heimdall /heimdall
-chown -R heimdall:heimdall /config/heimdall
-chmod -R 755 /heimdall
-chmod -R 775 /heimdall/storage /heimdall/bootstrap/cache
-chmod -R 775 /config/heimdall
-
-# Run database migrations
-bashio::log.info "Running database migrations..."
+# Run database migrations as heimdall user
+bashio::log.info "Running database setup..."
 cd /heimdall
-su heimdall -s /bin/sh -c "php artisan migrate --force" || true
+su heimdall -s /bin/sh -c "php artisan migrate --force --no-interaction" 2>&1 | head -20 || true
 
-# Clear and rebuild caches
-bashio::log.info "Clearing application caches..."
-su heimdall -s /bin/sh -c "php artisan cache:clear" || true
-su heimdall -s /bin/sh -c "php artisan view:clear" || true
-su heimdall -s /bin/sh -c "php artisan config:cache" || true
+# Clear caches
+bashio::log.info "Clearing caches..."
+su heimdall -s /bin/sh -c "php artisan cache:clear --no-interaction" 2>&1 | head -5 || true
+su heimdall -s /bin/sh -c "php artisan config:clear --no-interaction" 2>&1 | head -5 || true
 
 # Create storage link
-su heimdall -s /bin/sh -c "php artisan storage:link" || true
+bashio::log.info "Creating storage link..."
+su heimdall -s /bin/sh -c "php artisan storage:link --no-interaction" 2>&1 | head -5 || true
 
 # Start PHP-FPM
 bashio::log.info "Starting PHP-FPM..."
 php-fpm83 -F -R &
 PHP_PID=$!
 
-# Wait for PHP-FPM to be ready
+# Wait a moment
 sleep 2
 
 # Start nginx
@@ -170,30 +134,27 @@ bashio::log.info "Starting Nginx..."
 nginx -g "daemon off;" &
 NGINX_PID=$!
 
-# Wait for services to start
-sleep 2
+# Give services time to start
+sleep 3
 
+bashio::log.info "----------------------------------------"
 bashio::log.info "Heimdall is running!"
-bashio::log.info "Access Heimdall at http://[YOUR_IP]:7990"
-if [ "${USE_SSL}" = "true" ]; then
-    bashio::log.info "Or via HTTPS at https://[YOUR_IP]:7991"
-fi
+bashio::log.info "Access at: http://[YOUR_IP]:7990"
+bashio::log.info "----------------------------------------"
 
-# Monitor services
+# Simple monitoring loop
 while true; do
-    # Check if PHP-FPM is running
+    sleep 60
+    
     if ! kill -0 $PHP_PID 2>/dev/null; then
-        bashio::log.error "PHP-FPM crashed, restarting..."
+        bashio::log.warning "PHP-FPM stopped, restarting..."
         php-fpm83 -F -R &
         PHP_PID=$!
     fi
     
-    # Check if nginx is running
     if ! kill -0 $NGINX_PID 2>/dev/null; then
-        bashio::log.error "Nginx crashed, restarting..."
+        bashio::log.warning "Nginx stopped, restarting..."
         nginx -g "daemon off;" &
         NGINX_PID=$!
     fi
-    
-    sleep 30
 done
