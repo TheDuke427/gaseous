@@ -12,7 +12,8 @@ RUN apk add --no-cache \
     cairo-dev \
     jpeg-dev \
     pango-dev \
-    giflib-dev
+    giflib-dev \
+    expect
 
 # Install The Lounge
 RUN npm install -g thelounge
