@@ -1,0 +1,38 @@
+{
+  "name": "Heimdall",
+  "version": "2.6.1",
+  "slug": "heimdall",
+  "description": "Heimdall Application Dashboard - Organize all your web applications",
+  "arch": ["armhf", "armv7", "aarch64", "amd64", "i386"],
+  "startup": "application",
+  "boot": "auto",
+  "ports": {
+    "80/tcp": 7990,
+    "443/tcp": 7991
+  },
+  "ports_description": {
+    "80/tcp": "Web interface (HTTP)",
+    "443/tcp": "Web interface (HTTPS)"
+  },
+  "options": {
+    "timezone": "America/New_York",
+    "allow_internal_requests": true,
+    "ssl": true,
+    "certfile": "fullchain.pem",
+    "keyfile": "privkey.pem"
+  },
+  "schema": {
+    "timezone": "str",
+    "allow_internal_requests": "bool",
+    "ssl": "bool",
+    "certfile": "str",
+    "keyfile": "str"
+  },
+  "map": [
+    "ssl:ro",
+    "config:rw"
+  ],
+  "panel_icon": "mdi:view-dashboard",
+  "panel_title": "Heimdall",
+  "panel_admin": false
+}
