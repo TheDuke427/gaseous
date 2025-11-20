@@ -35,6 +35,5 @@
     "use_ssl": "list(yes|no)",
     "dcc_download_path": "str",
     "auto_channels": ["str"]
-  },
-  "image": "ghcr.io/{arch}-addon-irc-client-dcc"
+  }
 }
