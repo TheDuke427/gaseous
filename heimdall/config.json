@@ -6,6 +6,7 @@
   "arch": ["armhf", "armv7", "aarch64", "amd64", "i386"],
   "startup": "application",
   "boot": "auto",
+  "init": false,
   "ports": {
     "80/tcp": 7990,
     "443/tcp": 7991
@@ -17,7 +18,7 @@
   "options": {
     "timezone": "America/New_York",
     "allow_internal_requests": true,
-    "ssl": true,
+    "ssl": false,
     "certfile": "fullchain.pem",
     "keyfile": "privkey.pem"
   },
