@@ -16,15 +16,9 @@
   "webui": "http://[HOST]:[PORT:8080]",
   "map": ["media:rw"],
   "options": {
-    "download_path": "/media/xdcc-downloads",
-    "irc_server": "irc.rizon.net",
-    "irc_port": 6667,
-    "irc_nick": "xdcc-downloader"
+    "download_path": "/media/xdcc-downloads"
   },
   "schema": {
-    "download_path": "str",
-    "irc_server": "str",
-    "irc_port": "port",
-    "irc_nick": "str"
+    "download_path": "str"
   }
 }
