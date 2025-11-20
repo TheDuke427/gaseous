@@ -6,7 +6,6 @@ import time
 import subprocess
 import logging
 from pathlib import Path
-import shutil
 
 # Set up logging
 logging.basicConfig(
@@ -15,34 +14,7 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-def find_unrar_binary():
-    """Try to find unrar binary in various locations."""
-    possible_paths = [
-        '/usr/bin/unrar',
-        '/usr/local/bin/unrar',
-        '/bin/unrar',
-        '/sbin/unrar',
-        shutil.which('unrar')
-    ]
-    
-    for path in possible_paths:
-        if path and os.path.exists(path):
-            logger.info(f"Found unrar at: {path}")
-            return path
-    
-    # Try to find it with which command
-    try:
-        result = subprocess.run(['which', 'unrar'], capture_output=True, text=True)
-        if result.returncode == 0 and result.stdout.strip():
-            path = result.stdout.strip()
-            logger.info(f"Found unrar via which: {path}")
-            return path
-    except:
-        pass
-    
-    return None
-
-def extract_rar(rar_file, extract_path, unrar_path, delete_after=False):
+def extract_rar(rar_file, extract_path, delete_after=False):
     """Extract a RAR file to the specified path."""
     try:
         logger.info(f"Extracting {rar_file} to {extract_path}")
@@ -53,7 +25,7 @@ def extract_rar(rar_file, extract_path, unrar_path, delete_after=False):
         target_dir.mkdir(parents=True, exist_ok=True)
         
         # Extract using unrar
-        cmd = [unrar_path, 'x', '-o+', '-y', str(rar_file), str(target_dir) + '/']
+        cmd = ['/usr/bin/unrar', 'x', '-o+', '-y', str(rar_file), str(target_dir) + '/']
         logger.info(f"Running command: {' '.join(cmd)}")
         result = subprocess.run(cmd, capture_output=True, text=True)
         
@@ -85,6 +57,9 @@ def scan_for_rar_files(source_path):
         for root, dirs, files in os.walk(source_path):
             for file in files:
                 if file.lower().endswith('.rar'):
+                    # Skip part files except part1
+                    if '.part' in file.lower() and not 'part1.rar' in file.lower() and not 'part01.rar' in file.lower():
+                        continue
                     full_path = os.path.join(root, file)
                     rar_files.append(full_path)
                     logger.info(f"Found: {full_path}")
@@ -115,44 +90,25 @@ def main():
         logger.error(f"Source path does not exist: {source_path}")
         sys.exit(1)
     
-    # Find unrar binary
-    unrar_path = find_unrar_binary()
-    
-    if not unrar_path:
-        logger.error("unrar binary not found!")
-        logger.info("Checking what's installed...")
-        
-        # Debug: List installed packages
-        try:
-            result = subprocess.run(['apk', 'list', '--installed'], capture_output=True, text=True)
-            logger.info("Installed packages:")
-            for line in result.stdout.split('\n'):
-                if 'rar' in line.lower():
-                    logger.info(f"  {line}")
-        except:
-            pass
-        
-        # Debug: Check PATH
-        logger.info(f"PATH: {os.environ.get('PATH', 'Not set')}")
-        
-        # Debug: List /usr/bin
-        logger.info("Contents of /usr/bin:")
-        try:
-            for file in os.listdir('/usr/bin'):
-                if 'rar' in file.lower():
-                    logger.info(f"  {file}")
-        except:
-            pass
-            
-        logger.error("Cannot continue without unrar. Exiting.")
-        sys.exit(1)
-    
-    # Test unrar
+    # Test if unrar is available
     try:
-        result = subprocess.run([unrar_path], capture_output=True, text=True)
-        logger.info("unrar is available and working")
+        result = subprocess.run(['/usr/bin/unrar'], capture_output=True, text=True)
+        logger.info("unrar is available for extraction")
+    except FileNotFoundError:
+        logger.error("unrar binary not found at /usr/bin/unrar")
+        # Try to find it elsewhere
+        try:
+            result = subprocess.run(['which', 'unrar'], capture_output=True, text=True)
+            if result.returncode == 0 and result.stdout.strip():
+                logger.info(f"Found unrar at: {result.stdout.strip()}")
+            else:
+                logger.error("unrar not found in system PATH")
+                sys.exit(1)
+        except Exception as e:
+            logger.error(f"Cannot locate unrar: {str(e)}")
+            sys.exit(1)
     except Exception as e:
-        logger.error(f"unrar test failed: {str(e)}")
+        logger.error(f"Error testing unrar: {str(e)}")
         sys.exit(1)
     
     processed_files = set()
@@ -166,3 +122,32 @@ def main():
             for rar_file in rar_files:
                 if rar_file not in processed_files:
                     logger.info(f"Processing: {rar_file}")
+                    
+                    if extract_rar(rar_file, extract_path, delete_after):
+                        processed_files.add(rar_file)
+                    else:
+                        logger.warning(f"Failed to process {rar_file}, will retry later")
+            
+            if not watch_mode:
+                if len(rar_files) == 0:
+                    logger.info("No RAR files found in source path")
+                logger.info("Single run complete. Exiting.")
+                break
+            
+            # Wait before next scan in watch mode
+            logger.info("Waiting 60 seconds before next scan...")
+            time.sleep(60)
+            
+        except KeyboardInterrupt:
+            logger.info("Received interrupt signal. Shutting down...")
+            break
+        except Exception as e:
+            logger.error(f"Unexpected error: {str(e)}")
+            if not watch_mode:
+                break
+            time.sleep(60)
+    
+    logger.info("Unrar Tool Stopped")
+
+if __name__ == "__main__":
+    main()
