@@ -1,0 +1,30 @@
+{
+  "name": "XDCC Downloader",
+  "version": "1.0.0",
+  "slug": "xdcc-downloader",
+  "description": "XDCC file downloader with web interface",
+  "arch": ["armhf", "armv7", "aarch64", "amd64", "i386"],
+  "startup": "application",
+  "boot": "manual",
+  "init": false,
+  "ports": {
+    "8080/tcp": 8080
+  },
+  "ports_description": {
+    "8080/tcp": "Web Interface"
+  },
+  "webui": "http://[HOST]:[PORT:8080]",
+  "map": ["media:rw"],
+  "options": {
+    "download_path": "/media/xdcc-downloads",
+    "irc_server": "irc.rizon.net",
+    "irc_port": 6667,
+    "irc_nick": "xdcc-downloader"
+  },
+  "schema": {
+    "download_path": "str",
+    "irc_server": "str",
+    "irc_port": "port",
+    "irc_nick": "str"
+  }
+}
