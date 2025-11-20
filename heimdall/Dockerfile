@@ -52,12 +52,15 @@ WORKDIR /heimdall
 # Install composer
 RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
 
-# Install Laravel dependencies
-RUN composer install --no-dev --optimize-autoloader --no-interaction --no-progress
+# Install Laravel dependencies (with dev dependencies first for initial setup)
+RUN composer install --no-interaction --no-progress
 
 # Copy environment file and generate key
 RUN cp .env.example .env && \
     php artisan key:generate
+
+# Now remove dev dependencies after key generation
+RUN composer install --no-dev --optimize-autoloader --no-interaction --no-progress
 
 # Set permissions
 RUN chown -R heimdall:heimdall /heimdall && \
