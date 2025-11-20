@@ -32,6 +32,7 @@
     "ssl:ro",
     "config:rw"
   ],
+  "webui": "http://[HOST]:[PORT:80]",
   "panel_icon": "mdi:view-dashboard",
   "panel_title": "Heimdall",
   "panel_admin": false
