@@ -90,16 +90,25 @@ EOF
 
     bashio::log.info "Configuration created successfully"
     
-    # Create admin user
+    # Create admin user using expect
     bashio::log.info "Creating admin user..."
     cd /data/thelounge
-    echo -e "${ADMIN_PASSWORD}\n${ADMIN_PASSWORD}" | thelounge add admin
-    bashio::log.info "Admin user created with username: admin"
+    
+    expect << DONE
+    spawn thelounge add admin
+    expect "Enter password:"
+    send "${ADMIN_PASSWORD}\r"
+    expect "Save logs to disk?"
+    send "yes\r"
+    expect eof
+DONE
+
+    bashio::log.info "Admin user created - Username: admin"
 fi
 
 # Start The Lounge
 bashio::log.info "Starting web interface on port 9000..."
-bashio::log.info "Login with username: admin"
+bashio::log.info "Login with username: admin and your configured password"
 bashio::log.info "Access it via the OPEN WEB UI button"
 
 cd /data/thelounge
