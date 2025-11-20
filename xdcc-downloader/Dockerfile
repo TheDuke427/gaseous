@@ -5,10 +5,7 @@ FROM $BUILD_FROM
 RUN apk add --no-cache \
     python3 \
     py3-pip \
-    bash \
-    irssi \
-    perl \
-    git
+    bash
 
 # Create directories
 RUN mkdir -p /data/downloads /data/config
