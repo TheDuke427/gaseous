@@ -1,4 +1,4 @@
-ARG BUILD_FROM
+ARG BUILD_FROM=ghcr.io/home-assistant/amd64-base:latest
 FROM $BUILD_FROM
 
 # Install required packages
@@ -29,6 +29,8 @@ RUN apk add --no-cache \
     php83-simplexml \
     php83-phar \
     php83-bcmath \
+    php83-intl \
+    php83-sodium \
     sqlite \
     git \
     curl \
@@ -51,7 +53,7 @@ WORKDIR /heimdall
 RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
 
 # Install Laravel dependencies
-RUN composer install --no-dev --optimize-autoloader
+RUN composer install --no-dev --optimize-autoloader --no-interaction --no-progress
 
 # Copy environment file and generate key
 RUN cp .env.example .env && \
