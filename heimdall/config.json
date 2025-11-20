@@ -7,8 +7,6 @@
   "startup": "application",
   "boot": "auto",
   "init": false,
-  "hassio_api": true,
-  "hassio_role": "default",
   "ports": {
     "80/tcp": 7990,
     "443/tcp": 7991
@@ -18,7 +16,7 @@
     "443/tcp": "Web interface (HTTPS)"
   },
   "options": {
-    "timezone": "America/New_York",
+    "timezone": "America/Los_Angeles",
     "allow_internal_requests": true,
     "ssl": false,
     "certfile": "fullchain.pem",
