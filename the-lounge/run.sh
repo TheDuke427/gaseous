@@ -2,7 +2,6 @@
 
 # Get config values
 DCC_DOWNLOAD_PATH=$(bashio::config 'dcc_download_path')
-ADMIN_PASSWORD=$(bashio::config 'admin_password')
 
 bashio::log.info "Starting The Lounge IRC client..."
 bashio::log.info "DCC downloads will be saved to: ${DCC_DOWNLOAD_PATH}"
@@ -17,12 +16,12 @@ mkdir -p /data/thelounge
 if [ ! -f /data/thelounge/config.js ]; then
     bashio::log.info "First run - generating configuration..."
     
-    # Create config.js
+    # Create config.js in PUBLIC mode (no login required)
     cat > /data/thelounge/config.js << 'EOF'
 "use strict";
 
 module.exports = {
-  public: false,
+  public: true,
   host: "0.0.0.0",
   port: 9000,
   bind: undefined,
@@ -47,7 +46,7 @@ module.exports = {
   transports: ["polling", "websocket"],
   leaveMessage: "The Lounge - https://thelounge.chat",
   defaults: {
-    name: "Freenode",
+    name: "Libera",
     host: "irc.libera.chat",
     port: 6667,
     password: "",
@@ -89,26 +88,11 @@ module.exports = {
 EOF
 
     bashio::log.info "Configuration created successfully"
-    
-    # Create admin user using expect
-    bashio::log.info "Creating admin user..."
-    cd /data/thelounge
-    
-    expect << DONE
-    spawn thelounge add admin
-    expect "Enter password:"
-    send "${ADMIN_PASSWORD}\r"
-    expect "Save logs to disk?"
-    send "yes\r"
-    expect eof
-DONE
-
-    bashio::log.info "Admin user created - Username: admin"
 fi
 
 # Start The Lounge
 bashio::log.info "Starting web interface on port 9000..."
-bashio::log.info "Login with username: admin and your configured password"
+bashio::log.info "Running in PUBLIC mode - no login required!"
 bashio::log.info "Access it via the OPEN WEB UI button"
 
 cd /data/thelounge
