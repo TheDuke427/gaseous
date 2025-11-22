@@ -11,7 +11,7 @@ RUN apk add --no-cache \
     curl
 
 # Install node-fetch globally for proxy
-RUN npm install -g node-fetch
+RUN npm install express node-fetch
 
 # Copy Ollama proxy script
 COPY ollama-proxy.js /app/ollama-proxy.js
