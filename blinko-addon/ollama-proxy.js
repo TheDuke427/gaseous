@@ -11,30 +11,7 @@ const OLLAMA_PORT = process.env.OLLAMA_PORT || "11434";
 
 app.use(bodyParser.json({ limit: "10mb" }));
 
-// Transform Ollama response to OpenAI format
-function transformToOpenAI(ollamaResponse) {
-  return {
-    id: `chatcmpl-${Date.now()}`,
-    object: "chat.completion",
-    created: Math.floor(Date.now() / 1000),
-    model: ollamaResponse.model,
-    choices: [{
-      index: 0,
-      message: {
-        role: ollamaResponse.message.role,
-        content: ollamaResponse.message.content
-      },
-      finish_reason: ollamaResponse.done_reason || "stop"
-    }],
-    usage: {
-      prompt_tokens: ollamaResponse.prompt_eval_count || 0,
-      completion_tokens: ollamaResponse.eval_count || 0,
-      total_tokens: (ollamaResponse.prompt_eval_count || 0) + (ollamaResponse.eval_count || 0)
-    }
-  };
-}
-
-// Proxy all /v1 requests to Ollama
+// Simple pass-through proxy - NO transformation
 app.use(/^\/v1\/.*/, async (req, res) => {
   const startTime = Date.now();
   
@@ -49,26 +26,45 @@ app.use(/^\/v1\/.*/, async (req, res) => {
       method: req.method,
       headers: {
         'Content-Type': 'application/json',
-        'Accept': '*/*',
       },
     };
 
-    // Add body for POST/PUT/PATCH
     if (req.method !== "GET" && req.method !== "HEAD" && req.body) {
       fetchOptions.body = JSON.stringify(req.body);
-      console.log("[PROXY] Request body model:", req.body.model);
-      console.log("[PROXY] Stream setting:", req.body.stream);
     }
 
-    console.log("[PROXY] Sending request to Ollama...");
     const upstream = await fetch(targetUrl, fetchOptions);
     const elapsed = ((Date.now() - startTime) / 1000).toFixed(2);
-    console.log(`[PROXY] Response status: ${upstream.status} (${elapsed}s)`);
+    console.log(`[PROXY] Response: ${upstream.status} (${elapsed}s)`);
 
-    // Get content type
-    const contentType = upstream.headers.get('content-type');
-    console.log(`[PROXY] Content-Type: ${contentType}`);
+    // Copy status and headers
+    res.status(upstream.status);
+    upstream.headers.forEach((value, key) => {
+      res.setHeader(key, value);
+    });
+
+    // Pass through response body as-is
+    const body = await upstream.text();
+    res.send(body);
     
+    console.log(`[PROXY] Proxied successfully (${elapsed}s)`);
+
+  } catch (err) {
+    const elapsed = ((Date.now() - startTime) / 1000).toFixed(2);
+    console.error(`[PROXY] Error after ${elapsed}s:`, err.message);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.get("/health", (req, res) => {
+  res.json({ status: "ok", target: `${OLLAMA_HOST}:${OLLAMA_PORT}` });
+});
+
+app.listen(PORT, "0.0.0.0", () => {
+  console.log(`[PROXY] Simple Ollama proxy on http://0.0.0.0:${PORT}`);
+  console.log(`[PROXY] Forwarding to http://${OLLAMA_HOST}:${OLLAMA_PORT}`);
+  console.log(`[PROXY] Pass-through mode (no transformation)`);
+});    
     // Check if this is a chat completion request
     const isChatCompletion = ollamaPath.includes('/api/chat');
 
