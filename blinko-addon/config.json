@@ -15,10 +15,14 @@
   "panel_icon": "mdi:note-text",
   "options": {
     "nextauth_secret": "CHANGE_ME_TO_SECURE_RANDOM_STRING",
-    "external_url": ""
+    "external_url": "",
+    "ollama_host": "192.168.86.44",
+    "ollama_port": 11434
   },
   "schema": {
     "nextauth_secret": "str",
-    "external_url": "str?"
+    "external_url": "str?",
+    "ollama_host": "str?",
+    "ollama_port": "port?"
   }
 }
