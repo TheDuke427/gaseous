@@ -6,14 +6,14 @@ const fetch = (...args) => import("node-fetch").then(({ default: fetch }) => fet
 const app = express();
 app.use(express.json({ limit: "10mb" }));
 
-// Read environment variables for Ollama
+// Environment variables
 const OLLAMA_HOST = process.env.OLLAMA_HOST || "192.168.86.44";
 const OLLAMA_PORT = process.env.OLLAMA_PORT || 11434;
 const OLLAMA_URL = `http://${OLLAMA_HOST}:${OLLAMA_PORT}/v1/completions`;
 
 app.post("/v1/api/chat", async (req, res) => {
   try {
-    // Forward the incoming request to Ollama
+    // Forward request to Ollama
     const response = await fetch(OLLAMA_URL, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -22,16 +22,17 @@ app.post("/v1/api/chat", async (req, res) => {
 
     const data = await response.json();
 
-    // Normalize the response for Blinko
+    // Normalize response for Blinko
     const normalized = {
       id: data.id || "cmpl-unknown",
       object: data.object || "chat.completion",
       choices: (data.choices || []).map((c, i) => ({
         index: i,
-        message:
-          c.message ||
-          (c.text ? { role: "assistant", content: c.text } : { role: "assistant", content: "" }),
-        finish_reason: c.finish_reason || "stop",
+        message: {
+          role: c.message?.role || "assistant",
+          content: c.message?.content || c.text || "[no content]",
+        },
+        finish_reason: c.finish_reason === "load" ? "stop" : c.finish_reason || "stop",
       })),
       usage:
         data.usage || { prompt_tokens: 0, completion_tokens: 0, total_tokens: 0 },
@@ -44,7 +45,7 @@ app.post("/v1/api/chat", async (req, res) => {
   }
 });
 
-// Optional health check endpoint
+// Health check endpoint
 app.get("/health", (req, res) => {
   res.json({ status: "ok" });
 });
