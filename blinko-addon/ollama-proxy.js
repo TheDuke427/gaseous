@@ -11,6 +11,24 @@ const OLLAMA_PORT = process.env.OLLAMA_PORT || "11434";
 
 app.use(bodyParser.json({ limit: "10mb" }));
 
+// Function to clean tag responses
+function cleanTagResponse(content) {
+  // Extract tags that start with # (with or without spaces after commas)
+  const tagMatches = content.match(/#[\w/-]+(?:\s*,\s*#[\w/-]+)*/g);
+  
+  if (tagMatches && tagMatches.length > 0) {
+    // Take the first match (usually the main tag list)
+    let tags = tagMatches[0];
+    // Remove spaces after commas
+    tags = tags.replace(/\s*,\s*/g, ',');
+    console.log(`[PROXY] 🏷️  Extracted tags: ${tags}`);
+    return tags;
+  }
+  
+  // If no tags found, return original
+  return content;
+}
+
 app.use(/^\/v1\/.*/, async (req, res) => {
   const startTime = Date.now();
   const ollamaPath = req.originalUrl.replace(/^\/v1/, '');
@@ -48,11 +66,32 @@ app.use(/^\/v1\/.*/, async (req, res) => {
       res.setHeader(key, value);
     });
 
-    const body = await upstream.text();
+    let body = await upstream.text();
+    
+    // Clean tag responses for /api/chat endpoints
+    if (ollamaPath.includes('/api/chat') && upstream.status === 200) {
+      try {
+        const parsed = JSON.parse(body);
+        if (parsed.message && parsed.message.content) {
+          const originalContent = parsed.message.content;
+          const cleanedContent = cleanTagResponse(originalContent);
+          
+          if (cleanedContent !== originalContent) {
+            console.log(`[PROXY] 🧹 Cleaned response`);
+            console.log(`[PROXY] Before: ${originalContent.substring(0, 200)}...`);
+            console.log(`[PROXY] After: ${cleanedContent}`);
+            parsed.message.content = cleanedContent;
+            body = JSON.stringify(parsed);
+          }
+        }
+      } catch (e) {
+        console.log(`[PROXY] ⚠️  Could not parse/clean response: ${e.message}`);
+      }
+    }
     
     console.log(`[PROXY] Response body (${body.length} chars):`);
-    console.log(body.substring(0, 800));
-    if (body.length > 800) console.log(`... (truncated ${body.length - 800} chars)`);
+    console.log(body.substring(0, 500));
+    if (body.length > 500) console.log(`... (truncated)`);
     
     res.send(body);
     
@@ -62,7 +101,6 @@ app.use(/^\/v1\/.*/, async (req, res) => {
   } catch (err) {
     const elapsed = ((Date.now() - startTime) / 1000).toFixed(2);
     console.error(`[PROXY] ✗ Error after ${elapsed}s: ${err.message}`);
-    console.error(err.stack);
     res.status(500).json({ error: err.message });
   }
 });
@@ -72,8 +110,8 @@ app.get("/health", (req, res) => {
 });
 
 app.listen(PORT, "0.0.0.0", () => {
-  console.log(`\n🚀 [PROXY] Ollama proxy running`);
+  console.log(`\n🚀 [PROXY] Ollama proxy with tag cleaning`);
   console.log(`   Listen: 0.0.0.0:${PORT}`);
   console.log(`   Target: ${OLLAMA_HOST}:${OLLAMA_PORT}`);
-  console.log(`   Tools stripping: enabled\n`);
+  console.log(`   Features: tools stripping, tag cleaning\n`);
 });
