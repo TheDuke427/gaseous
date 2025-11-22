@@ -16,6 +16,7 @@ app.use(/^\/v1\/.*/, async (req, res) => {
   const ollamaPath = req.originalUrl.replace(/^\/v1/, '');
   const targetUrl = `http://${OLLAMA_HOST}:${OLLAMA_PORT}${ollamaPath}`;
   
+  console.log(`\n========== PROXY REQUEST ==========`);
   console.log(`[PROXY] ${req.method} ${req.originalUrl} -> ${targetUrl}`);
 
   try {
@@ -26,16 +27,21 @@ app.use(/^\/v1\/.*/, async (req, res) => {
 
     if (req.method !== "GET" && req.method !== "HEAD" && req.body) {
       const bodyToSend = { ...req.body };
+      
+      console.log(`[PROXY] Request has tools: ${!!bodyToSend.tools}`);
+      
       if (bodyToSend.tools) {
-        console.log("[PROXY] Stripping tools parameter");
+        console.log("[PROXY] ⚠️  Stripping tools parameter");
         delete bodyToSend.tools;
       }
+      
       fetchOptions.body = JSON.stringify(bodyToSend);
     }
 
     const upstream = await fetch(targetUrl, fetchOptions);
     const elapsed = ((Date.now() - startTime) / 1000).toFixed(2);
-    console.log(`[PROXY] Response: ${upstream.status} (${elapsed}s)`);
+    
+    console.log(`[PROXY] ✓ Response: ${upstream.status} (${elapsed}s)`);
 
     res.status(upstream.status);
     upstream.headers.forEach((value, key) => {
@@ -44,16 +50,19 @@ app.use(/^\/v1\/.*/, async (req, res) => {
 
     const body = await upstream.text();
     
-    if (ollamaPath.includes('/api/chat')) {
-      console.log(`[PROXY] Body: ${body.substring(0, 300)}`);
-    }
+    console.log(`[PROXY] Response body (${body.length} chars):`);
+    console.log(body.substring(0, 800));
+    if (body.length > 800) console.log(`... (truncated ${body.length - 800} chars)`);
     
     res.send(body);
-    console.log(`[PROXY] Done (${elapsed}s)`);
+    
+    console.log(`[PROXY] ✓ Sent to client`);
+    console.log(`========================================\n`);
 
   } catch (err) {
     const elapsed = ((Date.now() - startTime) / 1000).toFixed(2);
-    console.error(`[PROXY] Error: ${err.message}`);
+    console.error(`[PROXY] ✗ Error after ${elapsed}s: ${err.message}`);
+    console.error(err.stack);
     res.status(500).json({ error: err.message });
   }
 });
@@ -63,5 +72,8 @@ app.get("/health", (req, res) => {
 });
 
 app.listen(PORT, "0.0.0.0", () => {
-  console.log(`[PROXY] Running on :${PORT} -> ${OLLAMA_HOST}:${OLLAMA_PORT}`);
+  console.log(`\n🚀 [PROXY] Ollama proxy running`);
+  console.log(`   Listen: 0.0.0.0:${PORT}`);
+  console.log(`   Target: ${OLLAMA_HOST}:${OLLAMA_PORT}`);
+  console.log(`   Tools stripping: enabled\n`);
 });
