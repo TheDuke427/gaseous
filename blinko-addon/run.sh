@@ -27,35 +27,6 @@ else
     echo "No external URL configured, using: ${BASE_URL}"
 fi
 
-# Configure nginx with dynamic Ollama host
-echo "Configuring Ollama proxy for ${OLLAMA_HOST}:${OLLAMA_PORT}..."
-sed "s/OLLAMA_HOST_PLACEHOLDER/${OLLAMA_HOST}/g; s/OLLAMA_PORT_PLACEHOLDER/${OLLAMA_PORT}/g" \
-    /etc/nginx/http.d/ollama-proxy.conf.template > /etc/nginx/http.d/ollama-proxy.conf
-
-# Verify the config was generated
-echo "Generated nginx config:"
-cat /etc/nginx/http.d/ollama-proxy.conf
-
-# Test nginx config
-echo "Testing nginx configuration..."
-nginx -t
-
-# Start nginx for Ollama endpoint translation
-echo "Starting Ollama proxy..."
-nginx -g 'daemon on;'
-sleep 2
-
-# Verify nginx is running
-if pgrep nginx > /dev/null; then
-    echo "✓ Ollama proxy running on localhost:11435"
-    echo "✓ Proxying to Ollama at ${OLLAMA_HOST}:${OLLAMA_PORT}"
-    echo "✓ Configure Blinko AI to use: http://localhost:11435/v1"
-else
-    echo "✗ ERROR: Nginx failed to start!"
-    cat /var/log/nginx/error.log
-    exit 1
-fi
-
 # Create PostgreSQL directory
 mkdir -p /data/postgres /run/postgresql
 chown -R postgres:postgres /data/postgres /run/postgresql
@@ -99,6 +70,7 @@ echo "Running database migrations..."
 cd /app
 npx prisma migrate deploy
 
+# Start Ollama Node proxy
 echo "Starting Ollama Node proxy..."
 node /app/ollama-proxy.js &
 
