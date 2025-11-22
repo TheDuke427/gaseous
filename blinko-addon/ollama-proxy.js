@@ -1,58 +1,65 @@
-// /app/ollama-proxy.js
 const express = require("express");
-// Use node-fetch for Node <18
-const fetch = (...args) => import("node-fetch").then(({ default: fetch }) => fetch(...args));
+const fetch = require("node-fetch");
 
 const app = express();
-app.use(express.json({ limit: "10mb" }));
+app.use(express.json());
 
-// Environment variables
 const OLLAMA_HOST = process.env.OLLAMA_HOST || "192.168.86.44";
-const OLLAMA_PORT = process.env.OLLAMA_PORT || 11434;
-const OLLAMA_URL = `http://${OLLAMA_HOST}:${OLLAMA_PORT}/v1/completions`;
+const OLLAMA_PORT = process.env.OLLAMA_PORT || "11434";
 
+// Helper to transform chat completions to text completions
+function transformChatToText(data) {
+  if (!data.choices) return data;
+
+  return {
+    id: data.id,
+    object: data.object,
+    choices: data.choices.map(c => ({
+      text: c.message?.content || "",
+      index: c.index,
+      finish_reason: c.finish_reason
+    })),
+    usage: data.usage
+  };
+}
+
+// Proxy POST /v1/api/chat to Ollama /v1/completions
 app.post("/v1/api/chat", async (req, res) => {
   try {
-    // Forward request to Ollama
-    const response = await fetch(OLLAMA_URL, {
+    const response = await fetch(`http://${OLLAMA_HOST}:${OLLAMA_PORT}/v1/completions`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(req.body),
+      body: JSON.stringify(req.body)
     });
 
     const data = await response.json();
-
-    // Normalize response for Blinko
-    const normalized = {
-      id: data.id || "cmpl-unknown",
-      object: data.object || "chat.completion",
-      choices: (data.choices || []).map((c, i) => ({
-        index: i,
-        message: {
-          role: c.message?.role || "assistant",
-          content: c.message?.content || c.text || "[no content]",
-        },
-        finish_reason: c.finish_reason === "load" ? "stop" : c.finish_reason || "stop",
-      })),
-      usage:
-        data.usage || { prompt_tokens: 0, completion_tokens: 0, total_tokens: 0 },
-    };
-
-    res.json(normalized);
+    const transformed = transformChatToText(data);
+    res.json(transformed);
   } catch (err) {
     console.error("Error in Ollama proxy:", err);
-    res.status(500).json({ error: "Failed to forward request to Ollama" });
+    res.status(500).json({ error: err.message });
   }
 });
 
-// Health check endpoint
-app.get("/health", (req, res) => {
-  res.json({ status: "ok" });
+// Pass through other /v1/* requests as-is
+app.all("/v1/*", async (req, res) => {
+  try {
+    const url = `http://${OLLAMA_HOST}:${OLLAMA_PORT}${req.originalUrl.replace(/^\/v1/, "")}`;
+    const response = await fetch(url, {
+      method: req.method,
+      headers: { ...req.headers, host: `${OLLAMA_HOST}:${OLLAMA_PORT}` },
+      body: req.method !== "GET" && req.method !== "HEAD" ? JSON.stringify(req.body) : undefined
+    });
+
+    const data = await response.json();
+    res.json(data);
+  } catch (err) {
+    console.error("Error in Ollama proxy:", err);
+    res.status(500).json({ error: err.message });
+  }
 });
 
-// Start the proxy
-const PORT = process.env.PROXY_PORT || 11435;
+const PORT = process.env.OLLAMA_PROXY_PORT || 11435;
 app.listen(PORT, () => {
-  console.log(`Ollama Node proxy listening on port ${PORT}`);
-  console.log(`Forwarding requests to Ollama at ${OLLAMA_URL}`);
+  console.log(`Ollama proxy running on http://localhost:${PORT}/v1`);
 });
