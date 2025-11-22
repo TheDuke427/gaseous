@@ -11,7 +11,7 @@ const OLLAMA_PORT = process.env.OLLAMA_PORT || "11434";
 
 app.use(bodyParser.json({ limit: "10mb" }));
 
-// Simple pass-through proxy with response logging
+// Pass-through proxy with tools parameter stripping
 app.use(/^\/v1\/.*/, async (req, res) => {
   const startTime = Date.now();
   
@@ -30,7 +30,14 @@ app.use(/^\/v1\/.*/, async (req, res) => {
     };
 
     if (req.method !== "GET" && req.method !== "HEAD" && req.body) {
-      fetchOptions.body = JSON.stringify(req.body);
+      // Remove 'tools' parameter if present (not supported by most Ollama models)
+      const bodyToSend = { ...req.body };
+      if (bodyToSend.tools) {
+        console.log("[PROXY] Stripping 'tools' parameter (not supported)");
+        delete bodyToSend.tools;
+      }
+      
+      fetchOptions.body = JSON.stringify(bodyToSend);
     }
 
     const upstream = await fetch(targetUrl, fetchOptions);
@@ -67,7 +74,9 @@ app.get("/health", (req, res) => {
 });
 
 app.listen(PORT, "0.0.0.0", () => {
-  console.log(`[PROXY] Simple Ollama proxy on http://0.0.0.0:${PORT}`);
+  console.log(`[PROXY] Ollama proxy on http://0.0.0.0:${PORT}`);
   console.log(`[PROXY] Forwarding to http://${OLLAMA_HOST}:${OLLAMA_PORT}`);
+  console.log(`[PROXY] Tools parameter stripping enabled`);
+});  console.log(`[PROXY] Forwarding to http://${OLLAMA_HOST}:${OLLAMA_PORT}`);
   console.log(`[PROXY] Response logging enabled`);
 });
