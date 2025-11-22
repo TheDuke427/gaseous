@@ -13,6 +13,14 @@ app.use(bodyParser.json({ limit: "10mb" }));
 
 // Function to clean tag responses
 function cleanTagResponse(content) {
+  // Don't clean if it looks like a refusal/error message
+  if (content.toLowerCase().includes('cannot') || 
+      content.toLowerCase().includes('unable') ||
+      content.toLowerCase().includes('sorry')) {
+    console.log(`[PROXY] ⚠️  Detected refusal/error, not cleaning`);
+    return content;
+  }
+  
   // Extract tags that start with # (with or without spaces after commas)
   const tagMatches = content.match(/#[\w/-]+(?:\s*,\s*#[\w/-]+)*/g);
   
@@ -26,6 +34,7 @@ function cleanTagResponse(content) {
   }
   
   // If no tags found, return original
+  console.log(`[PROXY] ℹ️  No tags found, returning original`);
   return content;
 }
 
@@ -45,8 +54,6 @@ app.use(/^\/v1\/.*/, async (req, res) => {
 
     if (req.method !== "GET" && req.method !== "HEAD" && req.body) {
       const bodyToSend = { ...req.body };
-      
-      console.log(`[PROXY] Request has tools: ${!!bodyToSend.tools}`);
       
       if (bodyToSend.tools) {
         console.log("[PROXY] ⚠️  Stripping tools parameter");
@@ -78,20 +85,20 @@ app.use(/^\/v1\/.*/, async (req, res) => {
           
           if (cleanedContent !== originalContent) {
             console.log(`[PROXY] 🧹 Cleaned response`);
-            console.log(`[PROXY] Before: ${originalContent.substring(0, 200)}...`);
+            console.log(`[PROXY] Before: ${originalContent.substring(0, 150)}...`);
             console.log(`[PROXY] After: ${cleanedContent}`);
             parsed.message.content = cleanedContent;
             body = JSON.stringify(parsed);
           }
         }
       } catch (e) {
-        console.log(`[PROXY] ⚠️  Could not parse/clean response: ${e.message}`);
+        console.log(`[PROXY] ⚠️  Could not parse/clean: ${e.message}`);
       }
     }
     
     console.log(`[PROXY] Response body (${body.length} chars):`);
-    console.log(body.substring(0, 500));
-    if (body.length > 500) console.log(`... (truncated)`);
+    console.log(body.substring(0, 400));
+    if (body.length > 400) console.log(`... (truncated)`);
     
     res.send(body);
     
@@ -110,8 +117,8 @@ app.get("/health", (req, res) => {
 });
 
 app.listen(PORT, "0.0.0.0", () => {
-  console.log(`\n🚀 [PROXY] Ollama proxy with tag cleaning`);
+  console.log(`\n🚀 [PROXY] Ollama proxy with smart tag cleaning`);
   console.log(`   Listen: 0.0.0.0:${PORT}`);
   console.log(`   Target: ${OLLAMA_HOST}:${OLLAMA_PORT}`);
-  console.log(`   Features: tools stripping, tag cleaning\n`);
+  console.log(`   Features: tools stripping, tag cleaning, refusal detection\n`);
 });
