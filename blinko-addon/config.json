@@ -25,4 +25,9 @@
     "ollama_host": "str?",
     "ollama_port": "port?"
   }
+  "docker": {
+    "environment": {
+      "OLLAMA_API": "openai"
+    }
+  },
 }
