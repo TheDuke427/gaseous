@@ -1,22 +1,25 @@
 // /app/ollama-proxy.js
 import express from "express";
-import fetch from "node-fetch"; // make sure node-fetch is installed
+import fetch from "node-fetch";
 import bodyParser from "body-parser";
 
 const app = express();
-const PORT = 11435;
 
+const PORT = 11435;
 const OLLAMA_HOST = process.env.OLLAMA_HOST || "192.168.86.44";
 const OLLAMA_PORT = process.env.OLLAMA_PORT || "11434";
 
-app.use(bodyParser.json());
+app.use(bodyParser.json({ limit: "10mb" }));
 
-// Simple proxy for /v1 requests
-app.use("/v1", async (req, res) => {
-  const url = `http://${OLLAMA_HOST}:${OLLAMA_PORT}${req.originalUrl}`;
+// Match ANY /v1/... request without using wildcard patterns
+app.use(async (req, res, next) => {
+  if (!req.originalUrl.startsWith("/v1")) return next();
+
+  const targetUrl = `http://${OLLAMA_HOST}:${OLLAMA_PORT}${req.originalUrl}`;
+  console.log("Proxying:", req.method, targetUrl);
 
   try {
-    const response = await fetch(url, {
+    const upstream = await fetch(targetUrl, {
       method: req.method,
       headers: {
         ...req.headers,
@@ -28,15 +31,20 @@ app.use("/v1", async (req, res) => {
           : undefined,
     });
 
-    const data = await response.json();
-    res.json(data);
+    // Copy headers
+    upstream.headers.forEach((value, key) => {
+      res.setHeader(key, value);
+    });
+
+    // Stream directly (no JSON.parse)
+    upstream.body.pipe(res);
   } catch (err) {
-    console.error(`Error proxying ${req.originalUrl}:`, err);
+    console.error("Proxy error:", err);
     res.status(500).json({ error: err.message });
   }
 });
 
 app.listen(PORT, () => {
   console.log(`Ollama proxy running on http://0.0.0.0:${PORT}`);
-  console.log(`Proxying to Ollama at http://${OLLAMA_HOST}:${OLLAMA_PORT}/v1`);
+  console.log(`Forwarding to http://${OLLAMA_HOST}:${OLLAMA_PORT}`);
 });
