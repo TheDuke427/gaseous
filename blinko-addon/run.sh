@@ -99,6 +99,9 @@ echo "Running database migrations..."
 cd /app
 npx prisma migrate deploy
 
+echo "Starting Ollama Node proxy..."
+node /app/ollama-proxy.js &
+
 # Start Blinko
 echo "Starting Blinko..."
 cd /app
