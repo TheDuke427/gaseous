@@ -112,15 +112,4 @@ app.listen(PORT, "0.0.0.0", () => {
   console.log(`[PROXY] Ollama-to-OpenAI proxy running on http://0.0.0.0:${PORT}`);
   console.log(`[PROXY] Forwarding to http://${OLLAMA_HOST}:${OLLAMA_PORT}`);
   console.log(`[PROXY] Transforming Ollama responses to OpenAI format`);
-});});
-
-// Health check
-app.get("/health", (req, res) => {
-  res.json({ status: "ok", target: `${OLLAMA_HOST}:${OLLAMA_PORT}` });
-});
-
-app.listen(PORT, "0.0.0.0", () => {
-  console.log(`[PROXY] Ollama proxy running on http://0.0.0.0:${PORT}`);
-  console.log(`[PROXY] Forwarding to http://${OLLAMA_HOST}:${OLLAMA_PORT}`);
-  console.log(`[PROXY] /v1/api/chat -> /api/chat (Ollama native)`);
 });
