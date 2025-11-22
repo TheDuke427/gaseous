@@ -11,7 +11,30 @@ const OLLAMA_PORT = process.env.OLLAMA_PORT || "11434";
 
 app.use(bodyParser.json({ limit: "10mb" }));
 
-// Proxy all /v1 requests to Ollama (using regex route)
+// Transform Ollama response to OpenAI format
+function transformToOpenAI(ollamaResponse) {
+  return {
+    id: `chatcmpl-${Date.now()}`,
+    object: "chat.completion",
+    created: Math.floor(Date.now() / 1000),
+    model: ollamaResponse.model,
+    choices: [{
+      index: 0,
+      message: {
+        role: ollamaResponse.message.role,
+        content: ollamaResponse.message.content
+      },
+      finish_reason: ollamaResponse.done_reason || "stop"
+    }],
+    usage: {
+      prompt_tokens: ollamaResponse.prompt_eval_count || 0,
+      completion_tokens: ollamaResponse.eval_count || 0,
+      total_tokens: (ollamaResponse.prompt_eval_count || 0) + (ollamaResponse.eval_count || 0)
+    }
+  };
+}
+
+// Proxy all /v1 requests to Ollama
 app.use(/^\/v1\/.*/, async (req, res) => {
   // Remove /v1 prefix: /v1/api/chat -> /api/chat
   const ollamaPath = req.originalUrl.replace(/^\/v1/, '');
@@ -31,44 +54,65 @@ app.use(/^\/v1\/.*/, async (req, res) => {
     // Add body for POST/PUT/PATCH
     if (req.method !== "GET" && req.method !== "HEAD" && req.body) {
       fetchOptions.body = JSON.stringify(req.body);
-      console.log("[PROXY] Request body:", JSON.stringify(req.body, null, 2));
+      console.log("[PROXY] Request body model:", req.body.model);
     }
 
     const upstream = await fetch(targetUrl, fetchOptions);
-
     console.log(`[PROXY] Response status: ${upstream.status}`);
 
-    // Set response status
-    res.status(upstream.status);
-
-    // Copy relevant headers
+    // Get content type
     const contentType = upstream.headers.get('content-type');
-    if (contentType) {
-      res.setHeader('content-type', contentType);
-    }
+    
+    // Check if this is a chat completion request
+    const isChatCompletion = ollamaPath.includes('/api/chat');
 
-    // Check if response is streaming (text/event-stream or chunked)
-    const isStream = contentType && (
-      contentType.includes('text/event-stream') ||
-      contentType.includes('application/x-ndjson')
-    );
-
-    if (isStream) {
-      console.log("[PROXY] Streaming response");
-      // Stream response
-      upstream.body.pipe(res);
+    if (isChatCompletion && upstream.status === 200) {
+      // Parse Ollama response
+      const ollamaResponse = await upstream.json();
+      console.log("[PROXY] Ollama response received, transforming to OpenAI format");
+      
+      // Transform to OpenAI format
+      const openAIResponse = transformToOpenAI(ollamaResponse);
+      
+      // Send transformed response
+      res.status(200).json(openAIResponse);
+      console.log("[PROXY] Sent OpenAI-formatted response");
     } else {
-      // Buffer and send
+      // For non-chat endpoints (like /api/tags), pass through as-is
+      res.status(upstream.status);
+      if (contentType) {
+        res.setHeader('content-type', contentType);
+      }
+      
       const text = await upstream.text();
-      console.log("[PROXY] Response:", text.substring(0, 200) + (text.length > 200 ? '...' : ''));
       res.send(text);
     }
 
   } catch (err) {
     console.error("[PROXY] Error:", err.message);
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ 
+      error: {
+        message: err.message,
+        type: "proxy_error"
+      }
+    });
   }
 });
+
+// Health check
+app.get("/health", (req, res) => {
+  res.json({ 
+    status: "ok", 
+    target: `${OLLAMA_HOST}:${OLLAMA_PORT}`,
+    transforming: "ollama_to_openai"
+  });
+});
+
+app.listen(PORT, "0.0.0.0", () => {
+  console.log(`[PROXY] Ollama-to-OpenAI proxy running on http://0.0.0.0:${PORT}`);
+  console.log(`[PROXY] Forwarding to http://${OLLAMA_HOST}:${OLLAMA_PORT}`);
+  console.log(`[PROXY] Transforming Ollama responses to OpenAI format`);
+});});
 
 // Health check
 app.get("/health", (req, res) => {
