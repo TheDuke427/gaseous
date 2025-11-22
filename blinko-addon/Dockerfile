@@ -9,9 +9,11 @@ RUN apk add --no-cache \
     jq \
     nginx \
     curl
+    
+RUN npm install express node-fetch
 
 # Copy nginx config template for Ollama endpoint translation
-COPY ollama-proxy.conf.template /etc/nginx/http.d/ollama-proxy.conf.template
+COPY ollama-proxy.js /etc/nginx/http.d/ollama-proxy.js
 
 # Copy run script
 COPY run.sh /
