@@ -1,7 +1,7 @@
 ARG BUILD_FROM
 FROM blinkospace/blinko:latest
 
-# Install PostgreSQL, jq, nginx, curl, and bash
+# Install PostgreSQL, jq, nginx, curl, bash
 RUN apk add --no-cache \
     postgresql \
     postgresql-contrib \
@@ -10,10 +10,10 @@ RUN apk add --no-cache \
     nginx \
     curl
 
-# Install node-fetch
+# Install node-fetch globally for proxy
 RUN npm install -g node-fetch
 
-# Copy nginx config template or proxy script
+# Copy Ollama proxy script
 COPY ollama-proxy.js /app/ollama-proxy.js
 
 # Copy run script
