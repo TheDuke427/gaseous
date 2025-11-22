@@ -11,8 +11,8 @@ const OLLAMA_PORT = process.env.OLLAMA_PORT || "11434";
 
 app.use(bodyParser.json({ limit: "10mb" }));
 
-// Proxy all /v1/* requests to Ollama
-app.all("/v1/*", async (req, res) => {
+// Proxy all /v1 requests to Ollama (using regex route)
+app.use(/^\/v1\/.*/, async (req, res) => {
   // Remove /v1 prefix: /v1/api/chat -> /api/chat
   const ollamaPath = req.originalUrl.replace(/^\/v1/, '');
   const targetUrl = `http://${OLLAMA_HOST}:${OLLAMA_PORT}${ollamaPath}`;
@@ -68,6 +68,18 @@ app.all("/v1/*", async (req, res) => {
     console.error("[PROXY] Error:", err.message);
     res.status(500).json({ error: err.message });
   }
+});
+
+// Health check
+app.get("/health", (req, res) => {
+  res.json({ status: "ok", target: `${OLLAMA_HOST}:${OLLAMA_PORT}` });
+});
+
+app.listen(PORT, "0.0.0.0", () => {
+  console.log(`[PROXY] Ollama proxy running on http://0.0.0.0:${PORT}`);
+  console.log(`[PROXY] Forwarding to http://${OLLAMA_HOST}:${OLLAMA_PORT}`);
+  console.log(`[PROXY] /v1/api/chat -> /api/chat (Ollama native)`);
+});
 });
 
 // Health check
