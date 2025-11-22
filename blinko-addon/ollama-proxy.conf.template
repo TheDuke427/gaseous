@@ -4,7 +4,7 @@ server {
 
     # Pass through /v1/api/chat to Ollama's native /api/chat
     location /v1/api/chat {
-        rewrite ^/v1/api/chat$ /api/chat break;
+        rewrite ^/v1/api/chat$ /v1/completions break;
         proxy_pass http://OLLAMA_HOST_PLACEHOLDER:OLLAMA_PORT_PLACEHOLDER;
         
         proxy_http_version 1.1;
