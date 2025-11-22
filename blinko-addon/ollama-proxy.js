@@ -54,21 +54,7 @@ app.use(/^\/v1\/.*/, async (req, res) => {
     console.error(`[PROXY] Error after ${elapsed}s:`, err.message);
     res.status(500).json({ error: err.message });
   }
-});
-
-app.get("/health", (req, res) => {
-  res.json({ status: "ok", target: `${OLLAMA_HOST}:${OLLAMA_PORT}` });
-});
-
-app.listen(PORT, "0.0.0.0", () => {
-  console.log(`[PROXY] Simple Ollama proxy on http://0.0.0.0:${PORT}`);
-  console.log(`[PROXY] Forwarding to http://${OLLAMA_HOST}:${OLLAMA_PORT}`);
-  console.log(`[PROXY] Pass-through mode (no transformation)`);
-});    
-    // Check if this is a chat completion request
-    const isChatCompletion = ollamaPath.includes('/api/chat');
-
-    if (isChatCompletion && upstream.status === 200) {
+});    if (isChatCompletion && upstream.status === 200) {
       console.log("[PROXY] Parsing Ollama response...");
       
       // Parse Ollama response
