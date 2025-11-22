@@ -36,6 +36,8 @@ function transformToOpenAI(ollamaResponse) {
 
 // Proxy all /v1 requests to Ollama
 app.use(/^\/v1\/.*/, async (req, res) => {
+  const startTime = Date.now();
+  
   // Remove /v1 prefix: /v1/api/chat -> /api/chat
   const ollamaPath = req.originalUrl.replace(/^\/v1/, '');
   const targetUrl = `http://${OLLAMA_HOST}:${OLLAMA_PORT}${ollamaPath}`;
@@ -55,29 +57,40 @@ app.use(/^\/v1\/.*/, async (req, res) => {
     if (req.method !== "GET" && req.method !== "HEAD" && req.body) {
       fetchOptions.body = JSON.stringify(req.body);
       console.log("[PROXY] Request body model:", req.body.model);
+      console.log("[PROXY] Stream setting:", req.body.stream);
     }
 
+    console.log("[PROXY] Sending request to Ollama...");
     const upstream = await fetch(targetUrl, fetchOptions);
-    console.log(`[PROXY] Response status: ${upstream.status}`);
+    const elapsed = ((Date.now() - startTime) / 1000).toFixed(2);
+    console.log(`[PROXY] Response status: ${upstream.status} (${elapsed}s)`);
 
     // Get content type
     const contentType = upstream.headers.get('content-type');
+    console.log(`[PROXY] Content-Type: ${contentType}`);
     
     // Check if this is a chat completion request
     const isChatCompletion = ollamaPath.includes('/api/chat');
 
     if (isChatCompletion && upstream.status === 200) {
+      console.log("[PROXY] Parsing Ollama response...");
+      
       // Parse Ollama response
       const ollamaResponse = await upstream.json();
-      console.log("[PROXY] Ollama response received, transforming to OpenAI format");
+      console.log("[PROXY] Ollama response parsed successfully");
+      console.log("[PROXY] Response preview:", JSON.stringify(ollamaResponse).substring(0, 200));
       
       // Transform to OpenAI format
       const openAIResponse = transformToOpenAI(ollamaResponse);
+      console.log("[PROXY] Transformed to OpenAI format");
       
       // Send transformed response
       res.status(200).json(openAIResponse);
-      console.log("[PROXY] Sent OpenAI-formatted response");
+      const totalElapsed = ((Date.now() - startTime) / 1000).toFixed(2);
+      console.log(`[PROXY] Response sent successfully (${totalElapsed}s total)`);
     } else {
+      console.log("[PROXY] Non-chat endpoint, passing through...");
+      
       // For non-chat endpoints (like /api/tags), pass through as-is
       res.status(upstream.status);
       if (contentType) {
@@ -85,11 +98,15 @@ app.use(/^\/v1\/.*/, async (req, res) => {
       }
       
       const text = await upstream.text();
+      console.log(`[PROXY] Pass-through response: ${text.substring(0, 100)}`);
       res.send(text);
     }
 
   } catch (err) {
-    console.error("[PROXY] Error:", err.message);
+    const elapsed = ((Date.now() - startTime) / 1000).toFixed(2);
+    console.error(`[PROXY] Error after ${elapsed}s:`, err.message);
+    console.error("[PROXY] Stack:", err.stack);
+    
     res.status(500).json({ 
       error: {
         message: err.message,
