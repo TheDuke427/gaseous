@@ -27,7 +27,8 @@
   },
   "docker": {
     "environment": {
-      "OLLAMA_API": "openai"
+      "OLLAMA_API": "openai",
+      "OLLAMA_KEEP_ALIVE": "-1"
     }
   }
 }
