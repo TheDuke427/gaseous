@@ -1,6 +1,7 @@
 // /app/ollama-proxy.js
 const express = require("express");
-const fetch = require("node-fetch");
+// Use node-fetch for Node <18
+const fetch = (...args) => import("node-fetch").then(({ default: fetch }) => fetch(...args));
 
 const app = express();
 app.use(express.json({ limit: "10mb" }));
@@ -21,7 +22,7 @@ app.post("/v1/api/chat", async (req, res) => {
 
     const data = await response.json();
 
-    // Normalize response for Blinko
+    // Normalize the response for Blinko
     const normalized = {
       id: data.id || "cmpl-unknown",
       object: data.object || "chat.completion",
@@ -43,11 +44,12 @@ app.post("/v1/api/chat", async (req, res) => {
   }
 });
 
-// Optional: health check
+// Optional health check endpoint
 app.get("/health", (req, res) => {
   res.json({ status: "ok" });
 });
 
+// Start the proxy
 const PORT = process.env.PROXY_PORT || 11435;
 app.listen(PORT, () => {
   console.log(`Ollama Node proxy listening on port ${PORT}`);
