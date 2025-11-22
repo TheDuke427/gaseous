@@ -24,11 +24,5 @@
     "external_url": "str?",
     "ollama_host": "str?",
     "ollama_port": "port?"
-  },
-  "docker": {
-    "environment": {
-      "OLLAMA_API": "openai",
-      "OLLAMA_KEEP_ALIVE": "-1"
-    }
   }
 }
