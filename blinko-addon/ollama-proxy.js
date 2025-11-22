@@ -12,7 +12,6 @@ const OLLAMA_PORT = process.env.OLLAMA_PORT || "11434";
 app.use(bodyParser.json({ limit: "10mb" }));
 
 function cleanTagResponse(content) {
-  // Don't clean refusals
   if (content.toLowerCase().includes('cannot') || 
       content.toLowerCase().includes('unable') ||
       content.toLowerCase().includes('sorry')) {
@@ -20,26 +19,19 @@ function cleanTagResponse(content) {
     return content;
   }
   
-  // Extract tags - handle both formats:
-  // Format 1: #Tag1, #Tag2, #Tag3
-  // Format 2: **Tags:** Tag1, Tag2, Tag3
-  
-  // Try format with # symbols first
   let tagMatches = content.match(/#[\w/-]+(?:\s*,\s*#[\w/-]+)*/g);
   
   if (tagMatches && tagMatches.length > 0) {
     let tags = tagMatches[0].replace(/\s*,\s*/g, ',');
-    console.log(`[PROXY] 🏷️  Extracted tags (format 1): ${tags}`);
+    console.log(`[PROXY] 🏷️  Extracted tags: ${tags}`);
     return tags;
   }
   
-  // Try **Tags:** format
   const tagsMatch = content.match(/\*\*Tags:\*\*\s*([^*\n]+)/i);
   if (tagsMatch) {
-    // Extract tag names and add # prefix
     const tagNames = tagsMatch[1].trim().split(/\s*,\s*/);
     const tags = tagNames.map(t => `#${t.trim()}`).join(',');
-    console.log(`[PROXY] 🏷️  Extracted tags (format 2): ${tags}`);
+    console.log(`[PROXY] 🏷️  Extracted from **Tags:**: ${tags}`);
     return tags;
   }
   
@@ -84,20 +76,17 @@ app.use(/^\/v1\/.*/, async (req, res) => {
 
     let body = await upstream.text();
     
-    // Handle potential streaming responses (multiple JSON objects)
     if (body.includes('}\n{')) {
-      console.log(`[PROXY] 📡 Detected streaming response, combining...`);
+      console.log(`[PROXY] 📡 Combining streaming chunks...`);
       const lines = body.trim().split('\n');
       const jsons = lines.map(line => {
         try { return JSON.parse(line); } catch { return null; }
       }).filter(Boolean);
       
       if (jsons.length > 0) {
-        // Combine all content from chunks
         const lastChunk = jsons[jsons.length - 1];
         const fullContent = jsons.map(j => j.message?.content || '').join('');
         
-        // Create single response
         const combined = {
           ...lastChunk,
           message: {
@@ -110,7 +99,6 @@ app.use(/^\/v1\/.*/, async (req, res) => {
       }
     }
     
-    // Clean tag responses
     if (ollamaPath.includes('/api/chat') && upstream.status === 200) {
       try {
         const parsed = JSON.parse(body);
@@ -119,9 +107,7 @@ app.use(/^\/v1\/.*/, async (req, res) => {
           const cleanedContent = cleanTagResponse(originalContent);
           
           if (cleanedContent !== originalContent) {
-            console.log(`[PROXY] 🧹 Cleaned`);
-            console.log(`[PROXY] Before: ${originalContent.substring(0, 100)}...`);
-            console.log(`[PROXY] After: ${cleanedContent}`);
+            console.log(`[PROXY] 🧹 Cleaned response`);
             parsed.message.content = cleanedContent;
             body = JSON.stringify(parsed);
           }
@@ -131,7 +117,7 @@ app.use(/^\/v1\/.*/, async (req, res) => {
       }
     }
     
-    console.log(`[PROXY] Body: ${body.substring(0, 300)}...`);
+    console.log(`[PROXY] Body: ${body.substring(0, 250)}...`);
     
     res.send(body);
     console.log(`[PROXY] ✓ Sent`);
@@ -148,27 +134,5 @@ app.get("/health", (req, res) => {
 });
 
 app.listen(PORT, "0.0.0.0", () => {
-  console.log(`\n🚀 [PROXY] Ollama proxy (streaming-aware)`);
-  console.log(`   :${PORT} -> ${OLLAMA_HOST}:${OLLAMA_PORT}\n`);
-});    res.send(body);
-    
-    console.log(`[PROXY] ✓ Sent to client`);
-    console.log(`========================================\n`);
-
-  } catch (err) {
-    const elapsed = ((Date.now() - startTime) / 1000).toFixed(2);
-    console.error(`[PROXY] ✗ Error after ${elapsed}s: ${err.message}`);
-    res.status(500).json({ error: err.message });
-  }
-});
-
-app.get("/health", (req, res) => {
-  res.json({ status: "ok", target: `${OLLAMA_HOST}:${OLLAMA_PORT}` });
-});
-
-app.listen(PORT, "0.0.0.0", () => {
-  console.log(`\n🚀 [PROXY] Ollama proxy with smart tag cleaning`);
-  console.log(`   Listen: 0.0.0.0:${PORT}`);
-  console.log(`   Target: ${OLLAMA_HOST}:${OLLAMA_PORT}`);
-  console.log(`   Features: tools stripping, tag cleaning, refusal detection\n`);
+  console.log(`\n🚀 [PROXY] Ready on :${PORT} -> ${OLLAMA_HOST}:${OLLAMA_PORT}\n`);
 });
