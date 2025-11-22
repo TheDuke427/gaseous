@@ -11,7 +11,7 @@ const OLLAMA_PORT = process.env.OLLAMA_PORT || "11434";
 
 app.use(bodyParser.json({ limit: "10mb" }));
 
-// Simple pass-through proxy - NO transformation
+// Simple pass-through proxy with response logging
 app.use(/^\/v1\/.*/, async (req, res) => {
   const startTime = Date.now();
   
@@ -43,8 +43,14 @@ app.use(/^\/v1\/.*/, async (req, res) => {
       res.setHeader(key, value);
     });
 
-    // Pass through response body as-is
+    // Get response body
     const body = await upstream.text();
+    
+    // Log response preview for debugging (first 500 chars)
+    if (ollamaPath.includes('/api/chat')) {
+      console.log(`[PROXY] Response body: ${body.substring(0, 500)}`);
+    }
+    
     res.send(body);
     
     console.log(`[PROXY] Proxied successfully (${elapsed}s)`);
@@ -63,5 +69,5 @@ app.get("/health", (req, res) => {
 app.listen(PORT, "0.0.0.0", () => {
   console.log(`[PROXY] Simple Ollama proxy on http://0.0.0.0:${PORT}`);
   console.log(`[PROXY] Forwarding to http://${OLLAMA_HOST}:${OLLAMA_PORT}`);
-  console.log(`[PROXY] Pass-through mode (no transformation)`);
+  console.log(`[PROXY] Response logging enabled`);
 });
