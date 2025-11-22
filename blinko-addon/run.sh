@@ -9,9 +9,13 @@ OPTIONS_FILE="/data/options.json"
 if [ -f "$OPTIONS_FILE" ]; then
     NEXTAUTH_SECRET=$(jq -r '.nextauth_secret // "CHANGE_ME"' "$OPTIONS_FILE")
     EXTERNAL_URL=$(jq -r '.external_url // ""' "$OPTIONS_FILE")
+    OLLAMA_HOST=$(jq -r '.ollama_host // "192.168.86.44"' "$OPTIONS_FILE")
+    OLLAMA_PORT=$(jq -r '.ollama_port // "11434"' "$OPTIONS_FILE")
 else
     NEXTAUTH_SECRET="CHANGE_ME_TO_SECURE_RANDOM_STRING"
     EXTERNAL_URL=""
+    OLLAMA_HOST="192.168.86.44"
+    OLLAMA_PORT="11434"
 fi
 
 # Determine the base URL
@@ -22,6 +26,19 @@ else
     BASE_URL="http://localhost:1111"
     echo "No external URL configured, using: ${BASE_URL}"
 fi
+
+# Configure nginx with dynamic Ollama host
+echo "Configuring Ollama proxy for ${OLLAMA_HOST}:${OLLAMA_PORT}..."
+sed "s/OLLAMA_HOST_PLACEHOLDER/${OLLAMA_HOST}/g; s/OLLAMA_PORT_PLACEHOLDER/${OLLAMA_PORT}/g" \
+    /etc/nginx/http.d/ollama-proxy.conf.template > /etc/nginx/http.d/ollama-proxy.conf
+
+# Start nginx for Ollama endpoint translation
+echo "Starting Ollama proxy..."
+nginx &
+sleep 1
+echo "Ollama proxy running on localhost:11435"
+echo "Proxying to Ollama at ${OLLAMA_HOST}:${OLLAMA_PORT}"
+echo "Configure Blinko AI to use: http://localhost:11435/v1"
 
 # Create PostgreSQL directory
 mkdir -p /data/postgres /run/postgresql
@@ -68,4 +85,4 @@ npx prisma migrate deploy
 
 # Start Blinko
 echo "Starting Blinko..."
-exec node server/index.js
+exec node server/index.jsexec node server/index.js
