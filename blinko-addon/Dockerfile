@@ -1,12 +1,16 @@
 ARG BUILD_FROM
 FROM blinkospace/blinko:latest
 
-# Install PostgreSQL and jq for JSON parsing
+# Install PostgreSQL, jq, and nginx for Ollama proxy
 RUN apk add --no-cache \
     postgresql \
     postgresql-contrib \
     bash \
-    jq
+    jq \
+    nginx
+
+# Copy nginx config template for Ollama endpoint translation
+COPY ollama-proxy.conf.template /etc/nginx/http.d/ollama-proxy.conf.template
 
 # Copy run script
 COPY run.sh /
