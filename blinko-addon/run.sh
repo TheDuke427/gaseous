@@ -54,6 +54,19 @@ su postgres -c "psql -c \"CREATE DATABASE blinko;\"" 2>/dev/null || true
 su postgres -c "psql -c \"CREATE USER blinkouser WITH PASSWORD 'blinkopass';\"" 2>/dev/null || true
 su postgres -c "psql -c \"GRANT ALL PRIVILEGES ON DATABASE blinko TO blinkouser;\"" 2>/dev/null || true
 
+# Redirect Blinko files directory to persistent storage
+echo "Setting up persistent backup storage..."
+mkdir -p /data/blinko-files
+if [ ! -L "/app/.blinko/files" ]; then
+    # Remove existing files directory if it exists
+    rm -rf /app/.blinko/files
+    # Create parent directory
+    mkdir -p /app/.blinko
+    # Create symlink to persistent storage
+    ln -s /data/blinko-files /app/.blinko/files
+    echo "✓ Backups will be saved to /data/blinko-files"
+fi
+
 # Run Prisma migrations
 cd /app
 echo "Running database migrations..."
