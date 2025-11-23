@@ -3,7 +3,7 @@ FROM ghcr.io/advplyr/audiobookshelf:latest AS audiobookshelf
 
 FROM $BUILD_FROM
 
-ENV LANG C.UTF-8
+ENV LANG=C.UTF-8
 
 # Install dependencies
 RUN apk add --no-cache \
@@ -13,11 +13,9 @@ RUN apk add --no-cache \
     curl \
     tzdata
 
-# Copy audiobookshelf from official image
-COPY --from=audiobookshelf /server /server
-COPY --from=audiobookshelf /client /client
-COPY --from=audiobookshelf /usr/local/bin/node /usr/local/bin/node
-COPY --from=audiobookshelf /usr/local/lib/node_modules /usr/local/lib/node_modules
+# Copy only the production files from audiobookshelf
+COPY --from=audiobookshelf /prod/server /server
+COPY --from=audiobookshelf /prod/client /client
 
 # Copy run script
 COPY run.sh /
