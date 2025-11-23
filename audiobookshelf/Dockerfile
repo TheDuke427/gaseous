@@ -1,6 +1,6 @@
+ARG BUILD_FROM
 FROM ghcr.io/advplyr/audiobookshelf:latest AS audiobookshelf
 
-ARG BUILD_FROM
 FROM $BUILD_FROM
 
 ENV LANG C.UTF-8
