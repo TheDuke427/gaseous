@@ -8,7 +8,7 @@ RUN apk add --no-cache bash curl
 COPY run.sh /
 RUN chmod a+x /run.sh
 
-# Expose port
-EXPOSE 8000
+# Expose port (audiobookshelf uses port 80 internally)
+EXPOSE 80
 
 CMD ["/run.sh"]
