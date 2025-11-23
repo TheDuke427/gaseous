@@ -1,6 +1,6 @@
 # Blinko Home Assistant Add-on (built for use with self-hosted Ollama LLM)
 
-![Blinko Logo](https://raw.githubusercontent.com/blinkospace/blinko/main/public/logo.png)
+![Blinko Logo](https://mintcdn.com/blinko/QD93e7C2oAb_n8pf/logo/logo-dark-title.png?w=1650&fit=max&auto=format&n=QD93e7C2oAb_n8pf&q=85&s=a523bd7fcfa9a623e0f04884fd14f372))
 
 A self-hosted note-taking application with AI capabilities, packaged as a Home Assistant add-on. Capture your thoughts instantly, organize them effortlessly, and leverage AI for enhanced search and retrieval.
 
