@@ -1,27 +1,8 @@
-ARG BUILD_FROM
+ARG BUILD_FROM=ghcr.io/advplyr/audiobookshelf:latest
 FROM $BUILD_FROM
 
-# Set shell
-SHELL ["/bin/bash", "-o", "pipefail", "-c"]
-
-# Install required packages
-RUN apk add --no-cache \
-    nodejs \
-    npm \
-    ffmpeg \
-    curl \
-    tzdata
-
-# Set working directory
-WORKDIR /app
-
-# Download and extract Audiobookshelf
-ARG AUDIOBOOKSHELF_VERSION=2.17.4
-RUN curl -fsSL https://github.com/advplyr/audiobookshelf/releases/download/v${AUDIOBOOKSHELF_VERSION}/audiobookshelf-${AUDIOBOOKSHELF_VERSION}-linux-x64.tar.gz \
-    | tar xzf - -C /app
-
-# Create necessary directories
-RUN mkdir -p /config /metadata /audiobooks /podcasts
+# Install bashio for Home Assistant integration
+RUN apk add --no-cache bash curl
 
 # Copy run script
 COPY run.sh /
