@@ -8,14 +8,14 @@
   "boot": "auto",
   "init": false,
   "ports": {
-    "8000/tcp": 13378
+    "80/tcp": 13378
   },
   "ports_description": {
-    "8000/tcp": "Web interface"
+    "80/tcp": "Web interface"
   },
   "map": ["share:rw", "media:rw"],
   "options": {
-    "port": 8000
+    "port": 80
   },
   "schema": {
     "port": "port"
