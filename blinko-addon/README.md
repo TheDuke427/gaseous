@@ -1,4 +1,4 @@
-# Blinko Home Assistant Add-on
+# Blinko Home Assistant Add-on (built for use with Ollama LLM)
 
 ![Blinko Logo](https://raw.githubusercontent.com/blinkospace/blinko/main/public/logo.png)
 
