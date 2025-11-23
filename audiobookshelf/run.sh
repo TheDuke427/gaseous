@@ -13,4 +13,4 @@ bashio::log.info "Metadata directory: ${METADATA_PATH}"
 bashio::log.info "Port: ${PORT}"
 
 # Execute the original entrypoint from the base image
-exec node /server/index.js
+exec /usr/local/bin/node /server/index.js
