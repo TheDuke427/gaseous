@@ -12,6 +12,5 @@ bashio::log.info "Config directory: ${CONFIG_PATH}"
 bashio::log.info "Metadata directory: ${METADATA_PATH}"
 bashio::log.info "Port: ${PORT}"
 
-# Change to the app directory and start Audiobookshelf
-cd /audiobookshelf
-exec node index.js
+# Execute the original entrypoint from the base image
+exec node /server/index.js
