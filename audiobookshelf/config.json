@@ -13,7 +13,7 @@
   "ports_description": {
     "80/tcp": "Web interface"
   },
-  "map": ["share:rw", "media:rw"],
+  "map": ["share:rw", "media:rw", "config:rw"],
   "options": {
     "port": 80
   },
