@@ -19,5 +19,6 @@
   },
   "schema": {
     "port": "port"
-  }
+  },
+  "image": "ghcr.io/advplyr/audiobookshelf"
 }
