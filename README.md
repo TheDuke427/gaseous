@@ -49,10 +49,6 @@ Each add-on follows the standard Home Assistant add-on structure:
 - `run.sh` - Startup script
 - `README.md` - Add-on specific documentation
 
-## 🤝 Contributing
-
-Contributions, issues, and feature requests are welcome! Feel free to check the issues page if you want to contribute.
-
 ## 📄 License
 
 This repository contains both original work and modifications of open-source projects. Please refer to individual add-on directories for specific licensing information.
