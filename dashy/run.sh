@@ -1,4 +1,4 @@
-#!/usr/bin/with-contenv bashio
+#!/bin/bash
 
 CONFIG_PATH=/data/options.json
 DASHY_CONFIG=/app/user-data/conf.yml
@@ -8,10 +8,10 @@ mkdir -p /app/user-data
 
 # Check if Dashy config exists in /config
 if [ -f "/config/dashy-config.yml" ]; then
-    bashio::log.info "Using existing Dashy configuration"
+    echo "[Info] Using existing Dashy configuration"
     cp /config/dashy-config.yml $DASHY_CONFIG
 else
-    bashio::log.info "Creating default Dashy configuration"
+    echo "[Info] Creating default Dashy configuration"
     cat > $DASHY_CONFIG <<EOF
 pageInfo:
   title: Home Dashboard
