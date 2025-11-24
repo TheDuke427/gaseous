@@ -1,18 +1,16 @@
 #!/bin/bash
 
-CONFIG_PATH=/data/options.json
-DASHY_CONFIG=/app/user-data/conf.yml
+CONFIG_DIR=/config
+DASHY_CONFIG_SOURCE="${CONFIG_DIR}/dashy-config.yml"
+DASHY_CONFIG_DEST=/app/user-data/conf.yml
 
-# Create config directory
+# Create config directory if needed
 mkdir -p /app/user-data
 
 # Check if Dashy config exists in /config
-if [ -f "/config/dashy-config.yml" ]; then
-    echo "[Info] Using existing Dashy configuration"
-    cp /config/dashy-config.yml $DASHY_CONFIG
-else
+if [ ! -f "${DASHY_CONFIG_SOURCE}" ]; then
     echo "[Info] Creating default Dashy configuration"
-    cat > $DASHY_CONFIG <<EOF
+    cat > ${DASHY_CONFIG_SOURCE} <<EOF
 pageInfo:
   title: Home Dashboard
   description: Home Assistant Dashboard
@@ -25,6 +23,10 @@ sections:
         icon: fas fa-home
 EOF
 fi
+
+# Create a symlink instead of copying - this ensures persistence
+echo "[Info] Linking configuration for persistence"
+ln -sf ${DASHY_CONFIG_SOURCE} ${DASHY_CONFIG_DEST}
 
 # Start Dashy
 cd /app
