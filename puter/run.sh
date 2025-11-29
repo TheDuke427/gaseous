@@ -1,12 +1,9 @@
 #!/bin/bash
 set -e
 
-echo "[Puter] Starting..."
+echo "[Puter] Starting in production mode..."
 
 cd /opt/puter
 
-# Allow any host (necessary inside HA add-on)
-export PUTER_DEV_ALLOW_ANY_HOST=1
-
-# Bind to all interfaces
-exec npm start -- --port 4100 --host 0.0.0.0
+# Run the production server, bind to all interfaces
+exec npm run serve -- --port 4100 --host 0.0.0.0
