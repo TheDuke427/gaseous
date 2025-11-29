@@ -1,8 +1,9 @@
 #!/bin/bash
 set -e
 
-echo "Starting Puter..."
+echo "[Puter] Starting..."
 
 cd /opt/puter
 
-npm start -- --port 4100
+# Don’t daemonize. Don’t background. Let HA supervise.
+exec npm start -- --port 4100
