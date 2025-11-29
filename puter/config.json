@@ -1,10 +1,21 @@
 {
   "name": "Puter",
-  "version": "1.0.0",
+  "version": "0.1.1",
   "slug": "puter",
+  "description": "Self-hosted Puter inside Home Assistant",
+  "arch": ["amd64", "aarch64"],
   "startup": "application",
-  "ports": { "4100/tcp": 4100 },
-  "map": ["config:rw", "share:rw", "media:rw"],
+  "boot": "auto",
+  "ports": {
+    "4100/tcp": 4100
+  },
+  "map": [
+    "config:rw",
+    "media:rw",
+    "share:rw",
+    "addons:rw"
+  ],
+  "webui": "http://[HOST]:[PORT:4100]",
   "options": {},
   "schema": {}
 }
