@@ -1,20 +1,23 @@
-ARG BUILD_FROM
+ARG BUILD_FROM=ghcr.io/hassio-addons/base-debian:stable
 FROM $BUILD_FROM
 
-RUN apk add --no-cache \
-    nodejs \
-    npm \
-    git \
-    bash
+# Install dependencies
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+        git curl python3 python3-pip nodejs npm && \
+    rm -rf /var/lib/apt/lists/*
 
-WORKDIR /app
+# Install Puter
+RUN git clone https://github.com/HeyPuter/puter.git /opt/puter
+WORKDIR /opt/puter
 
-RUN git clone https://github.com/HeyPuter/puter.git .
-RUN npm install
+RUN npm install --omit=dev
 
-COPY run.sh /run.sh
-RUN chmod a+x /run.sh
-
+# Expose default Puter port
 EXPOSE 4100
 
-ENTRYPOINT ["/run.sh"]
+# Copy run script
+COPY run.sh /run.sh
+RUN chmod +x /run.sh
+
+CMD [ "/run.sh" ]
