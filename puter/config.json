@@ -2,20 +2,9 @@
   "name": "Puter",
   "version": "1.0.0",
   "slug": "puter",
-  "description": "Puter cloud desktop running as a Home Assistant add-on",
-  "arch": ["amd64", "aarch64"],
   "startup": "application",
-  "boot": true,
-  "ports": {
-    "4100/tcp": 4100
-  },
-  "map": [
-    "config:rw",
-    "ssl:ro",
-    "media:rw",
-    "share:rw",
-    "localstorage:rw"
-  ],
+  "ports": { "4100/tcp": 4100 },
+  "map": ["config:rw", "share:rw", "media:rw"],
   "options": {},
   "schema": {}
 }
