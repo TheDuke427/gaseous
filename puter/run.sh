@@ -5,5 +5,5 @@ echo "[Puter] Starting..."
 
 cd /opt/puter
 
-# Don't daemonize, don't background. Let HA supervise.
-exec npm start -- --port 4100
+# Listen on all network interfaces
+exec npm start -- --port 4100 --host 0.0.0.0 --allow-any-host
