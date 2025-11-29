@@ -20,6 +20,5 @@
   },
   "schema": {
     "domain": "str?"
-  },
-  "image": "ghcr.io/homeassistant/{arch}-addon-puter"
+  }
 }
