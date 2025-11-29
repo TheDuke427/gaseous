@@ -1,12 +1,7 @@
-#!/bin/bash
+#!/usr/bin/env bash
 set -e
 
-echo "[INFO] Starting Puter..."
+cd /opt/puter
 
-mkdir -p /app/volatile/config /data/data
-
-# Create completely empty config - let Puter use all defaults
-echo '{}' > /app/volatile/config/config.json
-
-cd /app
-exec npm start
+echo "Starting Puter..."
+npm start
