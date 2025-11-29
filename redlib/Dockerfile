@@ -7,26 +7,22 @@ SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 # Setup base
 RUN \
     apk add --no-cache \
-        nginx \
         curl \
-        ca-certificates
+        ca-certificates \
+        cargo \
+        rust \
+        git
 
-# Download and install Redlib
+# Build Redlib from source
 ARG REDLIB_VERSION=0.35.1
 RUN \
-    ARCH=$(uname -m) && \
-    if [ "$ARCH" = "x86_64" ]; then \
-        REDLIB_ARCH="x86_64-unknown-linux-musl"; \
-    elif [ "$ARCH" = "aarch64" ]; then \
-        REDLIB_ARCH="aarch64-unknown-linux-musl"; \
-    elif [ "$ARCH" = "armv7l" ]; then \
-        REDLIB_ARCH="armv7-unknown-linux-musleabihf"; \
-    else \
-        echo "Unsupported architecture: $ARCH" && exit 1; \
-    fi && \
-    curl -L "https://github.com/redlib-org/redlib/releases/download/v${REDLIB_VERSION}/redlib-${REDLIB_ARCH}" \
-        -o /usr/local/bin/redlib && \
-    chmod +x /usr/local/bin/redlib
+    git clone --depth 1 --branch v${REDLIB_VERSION} https://github.com/redlib-org/redlib.git /tmp/redlib && \
+    cd /tmp/redlib && \
+    cargo build --release && \
+    cp /tmp/redlib/target/release/redlib /usr/local/bin/redlib && \
+    chmod +x /usr/local/bin/redlib && \
+    cd / && \
+    rm -rf /tmp/redlib /root/.cargo
 
 # Copy root filesystem
 COPY run.sh /
