@@ -1,0 +1,51 @@
+{
+  "name": "Redlib",
+  "version": "0.35.1",
+  "slug": "redlib",
+  "description": "Privacy-focused alternative frontend for Reddit",
+  "url": "https://github.com/redlib-org/redlib",
+  "arch": ["armhf", "armv7", "aarch64", "amd64", "i386"],
+  "init": false,
+  "startup": "application",
+  "boot": "auto",
+  "ports": {
+    "8090/tcp": 8090
+  },
+  "ports_description": {
+    "8090/tcp": "Web interface"
+  },
+  "webui": "http://[HOST]:[PORT:8090]",
+  "ingress": true,
+  "ingress_port": 8090,
+  "panel_icon": "mdi:reddit",
+  "options": {
+    "redlib_default_theme": "system",
+    "redlib_default_front_page": "default",
+    "redlib_default_layout": "card",
+    "redlib_default_wide": "off",
+    "redlib_default_use_hls": "on",
+    "redlib_default_hide_hls_notification": "off",
+    "redlib_default_autoplay_videos": "off",
+    "redlib_default_comment_sort": "confidence",
+    "redlib_default_post_sort": "hot",
+    "redlib_default_show_nsfw": "off",
+    "redlib_default_blur_nsfw": "off",
+    "redlib_default_disable_visit_reddit_confirmation": "off",
+    "redlib_pushshift_frontend": ""
+  },
+  "schema": {
+    "redlib_default_theme": "list(system|black|dark|dracula|gold|green|lavendark|light|nord|rosebox|violet)?",
+    "redlib_default_front_page": "list(default|popular|all)?",
+    "redlib_default_layout": "list(card|clean|compact)?",
+    "redlib_default_wide": "list(on|off)?",
+    "redlib_default_use_hls": "list(on|off)?",
+    "redlib_default_hide_hls_notification": "list(on|off)?",
+    "redlib_default_autoplay_videos": "list(on|off)?",
+    "redlib_default_comment_sort": "list(confidence|top|new|controversial|old)?",
+    "redlib_default_post_sort": "list(hot|new|top|rising|controversial)?",
+    "redlib_default_show_nsfw": "list(on|off)?",
+    "redlib_default_blur_nsfw": "list(on|off)?",
+    "redlib_default_disable_visit_reddit_confirmation": "list(on|off)?",
+    "redlib_pushshift_frontend": "str?"
+  }
+}
