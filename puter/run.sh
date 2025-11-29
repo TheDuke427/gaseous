@@ -8,13 +8,7 @@ mkdir -p /app/volatile/config /data/data
 cat > /app/volatile/config/config.json << 'EOF'
 {
   "config_name": "puter-homeassistant",
-  "allow_all_host_values": true,
-  "services": {
-    "database": {
-      "engine": "sqlite",
-      "path": "/data/data/puter.db"
-    }
-  }
+  "allow_all_host_values": true
 }
 EOF
 
