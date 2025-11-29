@@ -5,12 +5,8 @@ echo "[INFO] Starting Puter..."
 
 mkdir -p /app/volatile/config /data/data
 
-cat > /app/volatile/config/config.json << 'EOF'
-{
-  "config_name": "puter-homeassistant",
-  "allow_all_host_values": true
-}
-EOF
+# Create completely empty config - let Puter use all defaults
+echo '{}' > /app/volatile/config/config.json
 
 cd /app
 exec npm start
