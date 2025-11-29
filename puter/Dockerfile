@@ -1,27 +1,20 @@
-ARG BUILD_FROM=ghcr.io/home-assistant/{arch}-base:latest
+ARG BUILD_FROM
 FROM $BUILD_FROM
 
-SHELL ["/bin/ash", "-o", "pipefail", "-c"]
+# Install required packages
+RUN apk add --no-cache git nodejs npm
 
-RUN apk add --no-cache \
-    git \
-    curl \
-    python3 \
-    py3-pip \
-    nodejs \
-    npm
+# Install Puter
+RUN git clone https://github.com/HeyPuter/puter.git /opt/puter && \
+    cd /opt/puter && npm install && npm run build
 
-# Clone Puter
-RUN git clone https://github.com/HeyPuter/puter.git /opt/puter
+# Copy rootfs (s6 services)
+COPY rootfs /
 
-WORKDIR /opt/puter
+# Home Assistant expects this label
+LABEL \
+  io.hass.version="1.0.0" \
+  io.hass.type="addon" \
+  io.hass.arch="amd64|aarch64"
 
-# Install ALL dependencies (including dev) so webpack build works
-RUN npm install
-
-COPY run.sh /run.sh
-RUN chmod +x /run.sh
-
-EXPOSE 4100
-
-CMD [ "/run.sh" ]
+# No ENTRYPOINT — s6-overlay handles init
