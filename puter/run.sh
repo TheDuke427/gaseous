@@ -1,20 +1,16 @@
 #!/bin/bash
 set -e
 
-echo "[INFO] Starting Puter container..."
+echo "[INFO] Starting Puter..."
 
-CONFIG_PATH=/data/options.json
-DOMAIN=$(jq -r '.domain // "puter.localhost"' $CONFIG_PATH)
-
-# Create directories
+# Set up directories
 mkdir -p /data/config /data/data
 
-# Run the official Puter Docker image
-docker run --rm \
-  --name puter-app \
-  -p 4100:4100 \
-  -e PUID=1000 \
-  -e PGID=1000 \
-  -v /data/config:/etc/puter \
-  -v /data/data:/var/puter \
-  ghcr.io/heyputer/puter:latest
+# Set environment variables for Puter
+export PUTER_CONFIG_PATH=/data/config
+export PUTER_DATA_PATH=/data/data
+export PUID=1000
+export PGID=1000
+
+# Start Puter (the official image has its own entrypoint)
+exec /usr/local/bin/start-puter.sh
