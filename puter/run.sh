@@ -1,7 +1,8 @@
-#!/usr/bin/env bash
+#!/bin/bash
 set -e
+
+echo "Starting Puter..."
 
 cd /opt/puter
 
-echo "Starting Puter..."
-npm start
+npm start -- --port 4100
