@@ -4,8 +4,6 @@
   "slug": "vaultwarden",
   "description": "Self-hosted Bitwarden-compatible Vaultwarden server as a Home Assistant add-on.",
   "arch": [
-    "armv7",
-    "armhf",
     "aarch64",
     "amd64"
   ],
@@ -45,6 +43,5 @@
   "map": [
     "data:rw"
   ],
-  "restart_policy": "always",
-  "image": "local"
+  "restart_policy": "always"
 }
