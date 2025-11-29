@@ -1,0 +1,25 @@
+{
+  "name": "Puter",
+  "version": "1.0.0",
+  "slug": "puter",
+  "description": "The Internet Computer - A privacy-first personal cloud and web OS",
+  "arch": ["aarch64", "amd64", "armv7"],
+  "startup": "application",
+  "boot": "auto",
+  "ports": {
+    "4100/tcp": 4100
+  },
+  "ports_description": {
+    "4100/tcp": "Puter web interface"
+  },
+  "webui": "http://[HOST]:[PORT:4100]",
+  "ingress": false,
+  "map": ["config:rw", "share:rw", "media:rw"],
+  "options": {
+    "domain": "puter.localhost"
+  },
+  "schema": {
+    "domain": "str?"
+  },
+  "image": "ghcr.io/homeassistant/{arch}-addon-puter"
+}
