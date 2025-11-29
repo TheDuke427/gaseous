@@ -10,7 +10,7 @@ mkdir -p /data/config /data/data
 
 cat > /data/config/config.json << 'EOF'
 {
-  "experimental_no_subdomain": true
+  "allow_nipio_domains": true
 }
 EOF
 
