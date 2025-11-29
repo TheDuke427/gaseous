@@ -10,7 +10,7 @@ mkdir -p /data/config /data/data
 
 cat > /data/config/config.json << 'EOF'
 {
-  "allow_nipio_domains": true
+  "allow_all_host_values": true
 }
 EOF
 
