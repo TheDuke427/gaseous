@@ -1,5 +1,4 @@
-#!/bin/bash
-set -e
+#!/command/with-contenv bashio
 
 CONFIG_PATH=/data/options.json
 
@@ -13,5 +12,5 @@ export PUTER_DATA_PATH="/data/data"
 cd /app
 
 # Start Puter
-echo "[INFO] Starting Puter on domain: $DOMAIN..."
+bashio::log.info "Starting Puter on domain: $DOMAIN..."
 exec npm start
