@@ -12,9 +12,11 @@ WORKDIR /app
 RUN git clone https://github.com/HeyPuter/puter.git .
 RUN npm install
 
-RUN mkdir -p /etc/services.d/puter
+RUN mkdir -p /data/config /data/data
 
-COPY run.sh /etc/services.d/puter/run
-RUN chmod a+x /etc/services.d/puter/run
+COPY run.sh /run.sh
+RUN chmod a+x /run.sh
 
 EXPOSE 4100
+
+ENTRYPOINT ["/run.sh"]
