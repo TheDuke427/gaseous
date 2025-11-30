@@ -14,17 +14,17 @@ case "$ARCH" in
   *) echo "Unsupported architecture: $ARCH"; exit 1 ;;
 esac
 
-echo "Fetching latest Vaultwarden release metadata..."
+echo "Fetching Vaultwarden release info..."
 RELEASE_JSON=$(curl -s https://api.github.com/repos/dani-garcia/vaultwarden/releases/latest)
 ASSET_URL=$(echo "$RELEASE_JSON" | jq -r ".assets[] | select(.name | test(\"${VW_ARCH}-unknown-linux-musl\")) | .browser_download_url" | head -n1)
 
 if [ -z "$ASSET_URL" ] || [ "$ASSET_URL" = "null" ]; then
-  echo "Could not find musl binary, trying gnu..."
+  echo "Falling back to gnu build..."
   ASSET_URL=$(echo "$RELEASE_JSON" | jq -r ".assets[] | select(.name | test(\"${VW_ARCH}-unknown-linux-gnu\")) | .browser_download_url" | head -n1)
 fi
 
 if [ -z "$ASSET_URL" ] || [ "$ASSET_URL" = "null" ]; then
-  echo "No suitable Vaultwarden binary found."
+  echo "No compatible Vaultwarden binary found."
   exit 1
 fi
 
@@ -35,5 +35,9 @@ tar -xzf /tmp/vw.tar.gz -C /tmp
 mv /tmp/vaultwarden "${APP_DIR}/vaultwarden"
 chmod +x "${APP_DIR}/vaultwarden"
 
+PORT=8000
+
 echo "Starting Vaultwarden..."
-exec /sbin/tini -- "${APP_DIR}/vaultwarden" --data "${DATA_DIR}" --port 80
+exec "${APP_DIR}/vaultwarden" \
+  --data "${DATA_DIR}" \
+  --port ${PORT}
