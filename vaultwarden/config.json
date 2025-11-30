@@ -1,50 +1,15 @@
 {
-  "name": "Vaultwarden (Unofficial)",
+  "name": "Vaultwarden",
   "version": "0.1.0",
   "slug": "vaultwarden",
-  "description": "Self-hosted Bitwarden-compatible Vaultwarden server as a Home Assistant add-on.",
-  "arch": [
-    "armv7",
-    "armhf",
-    "aarch64",
-    "amd64"
-  ],
+  "description": "Unofficial Vaultwarden server for Home Assistant",
   "startup": "services",
   "boot": "auto",
-  "map": [
-    "share:rw",
-    "config:rw",
-    "ssl:rw"
-  ],
-  "options": {
-    "port": 8000,
-    "web_vault": true,
-    "web_vault_version": "latest",
-    "domain": "",
-    "admin_token": ""
-  },
-  "schema": {
-    "port": "int",
-    "web_vault": "bool",
-    "web_vault_version": "str",
-    "domain": "str",
-    "admin_token": "str"
-  },
+  "arch": ["armv7", "aarch64", "amd64", "armhf"],
   "ports": {
     "8000/tcp": 8000
   },
-  "ports_description": {
-    "8000/tcp": "Vaultwarden web UI and API"
-  },
-  "host_network": false,
-  "ingress": false,
-  "panel_icon": "mdi:lock",
-  "panel_title": "Vaultwarden",
-  "host_network": false,
-  "webui": "http://[HOST]:8000",
-  "map": [
-    "data:rw"
-  ],
-  "restart_policy": "always",
-  "image": "local"
+  "map": ["data:rw"],
+  "options": {},
+  "schema": {}
 }
