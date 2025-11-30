@@ -1,15 +1,19 @@
 {
   "name": "Vaultwarden",
-  "version": "0.1.0",
+  "version": "0.2.1",
   "slug": "vaultwarden",
-  "description": "Unofficial Vaultwarden server for Home Assistant",
-  "startup": "services",
+  "description": "Unofficial Vaultwarden password manager server",
+  "startup": "application",
   "boot": "auto",
-  "arch": ["armv7", "aarch64", "amd64", "armhf"],
+  "arch": ["armv7", "armhf", "aarch64", "amd64"],
   "ports": {
     "8000/tcp": 8000
   },
   "map": ["data:rw"],
-  "options": {},
-  "schema": {}
+  "options": {
+    "admin_token": ""
+  },
+  "schema": {
+    "admin_token": "str?"
+  }
 }
