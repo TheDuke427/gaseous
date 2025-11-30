@@ -4,7 +4,6 @@ FROM node:lts-alpine
 # Install OS-level tools:
 # 1. runtime utilities: git, bash, jq, openssl
 # 2. build dependencies: python3 and build-base (required for native dependencies like better-sqlite3)
-# We install these first so they can be removed in the same layer as npm install/build for optimization.
 RUN apk add --no-cache \
     git \
     bash \
@@ -20,11 +19,13 @@ WORKDIR /app
 RUN git clone https://github.com/HeyPuter/puter.git .
 
 # --- CRITICAL: Install, Build, and Cleanup in One Layer ---
-# 1. npm install: Install ALL dependencies (including dev deps like webpack-cli) so the build can run.
-# 2. npm run build: Execute the build process.
-# 3. npm prune --production: Remove all development dependencies, leaving only what is needed to run Puter.
-# 4. apk del: Remove the OS-level build tools (python3, build-base) to minimize the final image size.
-RUN npm install && \
+# 1. npm config set yes true: Set non-interactive mode to prevent "Do you want to install..." prompts.
+# 2. npm install: Install ALL dependencies (including dev deps like webpack-cli).
+# 3. npm run build: Execute the build process.
+# 4. npm prune --production: Remove all development dependencies.
+# 5. apk del: Remove the OS-level build tools.
+RUN npm config set yes true && \
+    npm install && \
     npm run build && \
     npm prune --production && \
     apk del python3 build-base
