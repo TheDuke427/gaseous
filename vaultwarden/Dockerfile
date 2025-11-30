@@ -1,15 +1,16 @@
 ARG BUILD_FROM
 FROM $BUILD_FROM
 
-RUN apk add --no-cache bash curl jq tar gzip sqlite openssl tini
+# Install runtime deps
+RUN apk add --no-cache bash curl jq tar gzip sqlite openssl
 
-# Create app dir
+# App dir
 RUN mkdir -p /opt/vaultwarden /data
-WORKDIR /opt/vaultwarden
 
+# Copy scripts
 COPY run.sh /run.sh
 RUN chmod +x /run.sh
 
-EXPOSE 80
+WORKDIR /opt/vaultwarden
 
-CMD [ "/run.sh" ]
+# The base image will automatically run /run.sh
