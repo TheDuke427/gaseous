@@ -1,0 +1,26 @@
+{
+  "name": "Puter Desktop",
+  "version": "1.0.0",
+  "slug": "puter_desktop",
+  "description": "A self-hosted, open-source cloud desktop environment (Puter) running as a Home Assistant add-on.",
+  "url": "https://github.com/HeyPuter/puter",
+  "arch": ["amd64", "armhf", "armv7", "aarch64", "i386"],
+  "startup": "application",
+  "webui": "http://[HOST]:[PORT:8080]",
+  "map": ["config:rw", "addon_config:rw"],
+  "ports": {
+    "8100/tcp": 8100
+  },
+  "options": {
+    "PORT": 8080,
+    "DOMAIN": null
+  },
+  "schema": {
+    "PORT": "int",
+    "DOMAIN": "str?"
+  },
+  "environment": {
+    "NODE_ENV": "production"
+  },
+  "stage": "stable"
+}
