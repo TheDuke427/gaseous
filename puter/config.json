@@ -6,13 +6,13 @@
   "url": "https://github.com/HeyPuter/puter",
   "arch": ["amd64", "armhf", "armv7", "aarch64", "i386"],
   "startup": "application",
-  "webui": "http://[HOST]:[PORT:8080]",
+  "webui": "http://[HOST]:[PORT:8100]",
   "map": ["config:rw", "addon_config:rw"],
   "ports": {
     "8100/tcp": 8100
   },
   "options": {
-    "PORT": 8080,
+    "PORT": 8100,
     "DOMAIN": null
   },
   "schema": {
