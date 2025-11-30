@@ -1,9 +1,8 @@
-# Use a Node.js base image suitable for a Home Assistant add-on
-FROM node:lts-alpine
+# --- STAGE 1: BUILDER ---
+# Use a standard Node image for the build environment. This is where we install all dev dependencies.
+FROM node:lts-alpine AS builder
 
-# Install OS-level tools:
-# 1. runtime utilities: git, bash, jq, openssl
-# 2. build dependencies: python3 and build-base (required for native dependencies like better-sqlite3)
+# Install OS-level build dependencies needed for Puter's native modules (e.g., better-sqlite3)
 RUN apk add --no-cache \
     git \
     bash \
@@ -12,25 +11,41 @@ RUN apk add --no-cache \
     python3 \
     build-base
 
-# Set the working directory for the Puter application
 WORKDIR /app
 
-# Clone the Puter repository from GitHub
+# Clone the Puter repository
 RUN git clone https://github.com/HeyPuter/puter.git .
 
-# --- CRITICAL: Install, Build, and Cleanup in One Layer ---
-# 1. npm config set yes true: Set non-interactive mode to prevent "Do you want to install..." prompts.
-# 2. npm install: Install ALL dependencies (including dev deps like webpack-cli).
-# 3. npm run build: Execute the build process.
-# 4. npm prune --production: Remove all development dependencies.
-# 5. apk del: Remove the OS-level build tools.
-RUN npm config set yes true && \
-    npm install && \
-    npm run build && \
-    npm prune --production && \
-    apk del python3 build-base
+# Install ALL dependencies (including dev dependencies necessary for the build process)
+# Use a single RUN command to ensure all dependency layers are combined.
+RUN npm install
 
-# Expose the configured port
+# Run the full build process (this is the step that was failing)
+RUN npm run build
+
+# --- STAGE 2: PRODUCTION ---
+# Use a much smaller, clean Node image for the final runtime environment.
+FROM node:lts-alpine
+
+# Set the working directory
+WORKDIR /app
+
+# Install only the runtime dependencies (production dependencies)
+# We install here so the node_modules structure is correct for Alpine, but we only install prod deps.
+COPY --from=builder /app/package.json /app/package-lock.json ./
+RUN npm install --production
+
+# Copy the built files from the builder stage
+# Puter's core logic and built assets are now copied in, avoiding any build issues.
+COPY --from=builder /app/dist ./dist
+COPY --from=builder /app/src ./src
+COPY --from=builder /app/public ./public
+COPY --from=builder /app/server ./server
+COPY --from=builder /app/extensions ./extensions
+COPY --from=builder /app/.env.example ./.env.example
+COPY --from=builder /app/build-info.json ./build-info.json
+
+# Expose the configured port 8100
 EXPOSE 8100
 
 # Copy the Home Assistant add-on configuration and run script
