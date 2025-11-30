@@ -1,19 +1,25 @@
 {
   "name": "Vaultwarden",
-  "version": "0.2.1",
+  "version": "1.0.0",
   "slug": "vaultwarden",
-  "description": "Unofficial Vaultwarden password manager server",
-  "startup": "application",
+  "description": "Bitwarden-compatible server running Vaultwarden",
+  "url": "https://github.com/dani-garcia/vaultwarden",
+  "startup": "services",
   "boot": "auto",
-  "arch": ["armv7", "armhf", "aarch64", "amd64"],
   "ports": {
-    "8000/tcp": 8000
+    "80/tcp": 8123
   },
-  "map": ["data:rw"],
-  "options": {
-    "admin_token": ""
-  },
+  "map": [
+    "config:rw",
+    "ssl:rw",
+    "addons:rw",
+    "share:rw",
+    "backup:rw"
+  ],
   "schema": {
-    "admin_token": "str?"
+    "DOMAIN": "str?"
+  },
+  "options": {
+    "DOMAIN": null
   }
 }
