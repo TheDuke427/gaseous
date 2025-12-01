@@ -7,15 +7,20 @@ NODE_ENV="production"
 TRUST_PROXY="true"
 CONFIG_NAME="selfhosted" 
 
-# --- Dependency Installation and Build (Fix for missing worker assets) ---
+# --- Dependency Installation and Build (Fix for missing worker assets and webpack-cli) ---
 echo "--- Running Initial Dependencies and Build ---"
 # This step is critical to ensure all TypeScript assets, including worker preamble, 
-# are correctly compiled and placed, as the previous 'cd' approach failed.
+# are correctly compiled and placed.
 (
     set -e
     # Assuming /app is the project root where package.json lives
     echo "Running 'npm install' to ensure all dependencies are met..."
     npm install
+    
+    # CRITICAL FIX: Install webpack-cli globally because the build script for a core 
+    # dependency is failing due to the 'webpack' command not being found.
+    echo "Installing required build tool: webpack-cli globally..."
+    npm install -g webpack-cli
     
     echo "Running 'npm run build:ts' to compile all TypeScript assets..."
     npm run build:ts
@@ -69,6 +74,11 @@ else
     echo "Patched existing configuration file with IP:Port as the domain/subdomain and allow_nipio_domains: true."
 fi
 
+
+echo "--- Starting Puter Desktop ---"
+
+# Final Execution: Pass environment variables explicitly and run the application.
+exec env HOST="$HOST" PORT="$PORT" NODE_ENV="$NODE_ENV" TRUST_PROXY="$TRUST_PROXY" CONFIG_NAME="$CONFIG_NAME" node ./tools/run-selfhosted.js
 
 echo "--- Starting Puter Desktop ---"
 
