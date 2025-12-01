@@ -14,8 +14,7 @@ RUN apk add --no-cache \
 WORKDIR /app
 
 # --- CACHE BUSTER ---
-# This line is critical to force a clean build, bypassing cached layers that may have resulted in missing files.
-RUN echo "Forcing clean build v7 - Ignore Scripts"
+RUN echo "Forcing clean build v8 - Bash in Production"
 
 # Clone the Puter repository
 RUN git clone https://github.com/HeyPuter/puter.git .
@@ -23,7 +22,7 @@ RUN git clone https://github.com/HeyPuter/puter.git .
 # Install ALL dependencies
 RUN npm install
 
-# Run the full build process (This step succeeded in the previous log)
+# Run the full build process
 RUN npm run build
 
 # --- STAGE 2: PRODUCTION RUNTIME ---
@@ -32,13 +31,15 @@ FROM node:lts-alpine
 
 WORKDIR /app
 
+# CRITICAL FIX: Install bash here, as it is required to execute the run.sh script.
+RUN apk add --no-cache bash
+
 # Step 1: Copy package files and install ONLY production dependencies.
 COPY --from=builder /app/package.json /app/package-lock.json ./
-# CRITICAL FIX: Add --ignore-scripts to prevent the 'husky' prepare script from running and failing.
+# Use --ignore-scripts to avoid the 'husky' dev dependency failure
 RUN npm install --production --ignore-scripts
 
 # Step 2: Copy ALL built artifacts and source files from the builder's /app directory.
-# This single command recursively copies all contents (src, dist, public, server, config files).
 COPY --from=builder /app/ ./
 
 # Expose the configured port 8100
