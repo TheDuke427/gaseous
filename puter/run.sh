@@ -54,18 +54,23 @@ fi
 
 # --- Worker Preamble Build (Fix for WORKERS ERROR and TypeError) ---
 echo "--- Running Worker Preamble Build ---"
-# Change directory and run npm build for the worker files, which the kernel expects to be pre-built.
-if [ -d "/app/src/backend/src/worker" ]; then
-    echo "Building worker preamble from /app/src/backend/src/worker..."
-    # The parentheses execute the commands in a subshell, ensuring the main script's directory doesn't change.
-    (cd /app/src/backend/src/worker && npm run build)
-    if [ $? -eq 0 ]; then
-        echo "Worker preamble build successful."
-    else
-        echo "WARNING: Worker preamble build failed. The application may not function correctly."
-    fi
-else
-    echo "Worker directory not found. Assuming pre-built environment or that the build is not required."
+
+# FORCE the build step required by the Puter application. 
+# This runs in a subshell. 'set -e' ensures the subshell exits immediately if 
+# 'cd' fails (e.g., if the directory is truly missing).
+(
+    set -e
+    WORKER_DIR="/app/src/backend/src/worker"
+    echo "Attempting to build worker preamble in: ${WORKER_DIR}"
+    
+    cd "$WORKER_DIR"
+    npm run build
+    
+    echo "Worker preamble build successful."
+)
+if [ $? -ne 0 ]; then
+    echo "CRITICAL WARNING: Worker preamble build failed. This is the root cause of the svc_database.get error."
+    echo "This usually happens if the directory $WORKER_DIR is missing or if 'npm run build' failed."
 fi
 
 echo "--- Starting Puter Desktop ---"
