@@ -15,7 +15,7 @@ WORKDIR /app
 
 # --- CACHE BUSTER ---
 # This line is critical to force a clean build, bypassing cached layers that may have resulted in missing files.
-RUN echo "Forcing clean build v6"
+RUN echo "Forcing clean build v7 - Ignore Scripts"
 
 # Clone the Puter repository
 RUN git clone https://github.com/HeyPuter/puter.git .
@@ -34,7 +34,8 @@ WORKDIR /app
 
 # Step 1: Copy package files and install ONLY production dependencies.
 COPY --from=builder /app/package.json /app/package-lock.json ./
-RUN npm install --production
+# CRITICAL FIX: Add --ignore-scripts to prevent the 'husky' prepare script from running and failing.
+RUN npm install --production --ignore-scripts
 
 # Step 2: Copy ALL built artifacts and source files from the builder's /app directory.
 # This single command recursively copies all contents (src, dist, public, server, config files).
