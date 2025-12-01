@@ -7,21 +7,22 @@ NODE_ENV="production"
 TRUST_PROXY="true"
 CONFIG_NAME="selfhosted" 
 
-# --- Dependency Installation and Build (Fix: Ignoring the failing 'husky' script) ---
+# --- Dependency Installation and Build (Fix: Installing 'tsc' globally) ---
 echo "--- Running Initial Dependencies and Build ---"
 (
     set -e
     
-    # Install global build tools needed for the main build commands
-    echo "Installing global build tools: webpack and webpack-cli..."
-    npm install -g webpack webpack-cli
+    # CRITICAL FIX 1: Install all required global build tools (webpack/webpack-cli and now typescript/tsc).
+    echo "Installing global build tools: webpack, webpack-cli, and typescript..."
+    npm install -g webpack webpack-cli typescript
 
-    # CRITICAL FIX: Install dependencies, ignoring the 'prepare' script (which executes 'husky') 
+    # CRITICAL FIX 2: Run the main install, ignoring failing lifecycle scripts (like 'husky') 
     # and using --legacy-peer-deps to avoid complex dependency tree conflicts.
     echo "Running 'npm install' with --ignore-scripts and --legacy-peer-deps..."
     npm install --ignore-scripts --legacy-peer-deps
     
-    # Run the top-level build that compiles the TypeScript assets (which includes the missing worker preamble).
+    # CRITICAL STEP 3: Run the top-level build that compiles the TypeScript assets, 
+    # now that 'tsc' is guaranteed to be in the PATH.
     echo "Running 'npm run build:ts' to compile all TypeScript assets..."
     npm run build:ts
     
