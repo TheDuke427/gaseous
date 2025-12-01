@@ -1,11 +1,15 @@
 #!/usr/bin/env bash
 
 # --- Puter Server Configuration ---
-# Setting environment variables again, just in case the app uses them for fallback.
-export HOST="0.0.0.0"
-export PORT="8100"
-export NODE_ENV="production"
-export TRUST_PROXY="true"
+# Setting required environment variables for the runtime environment.
+# These variables define the environment and host configuration for the Puter server.
+HOST="0.0.0.0"
+PORT="8100"
+NODE_ENV="production"
+TRUST_PROXY="true"
+# CRITICAL FIX: Explicitly set the configuration name required by the Kernel 
+# to bypass the "config_name is required" error.
+CONFIG_NAME="selfhosted" 
 
 CONFIG_PATH="/etc/puter/config.json"
 CONFIG_DIR=$(dirname "$CONFIG_PATH")
@@ -19,15 +23,14 @@ mkdir -p "$CONFIG_DIR"
 if [ ! -f "$CONFIG_PATH" ]; then
     echo "Configuration file not found. Generating default with host settings."
     
-    # Generate the initial configuration content with the crucial domain and API subdomain settings.
-    # We use the IP address as the domain name for the supervisor proxy environment.
-    
+    # Generate the initial configuration content with necessary domain, API, and port settings.
     cat > "$CONFIG_PATH" << EOF
 {
   "domain": "192.168.86.32:8100",
   "api_subdomain": "192.168.86.32:8100",
   "allow_nipio_domains": true,
-  "http_port": 8100
+  "http_port": 8100,
+  "config_name": "generated default config"
 }
 EOF
 
@@ -35,18 +38,17 @@ EOF
 
 else
     echo "Configuration file found. Patching to ensure correct domain/port settings."
-
-    # If the file exists, patch it using jq for safety to ensure the required keys are present
     
     # Read the existing config
     CONFIG_CONTENT=$(cat "$CONFIG_PATH")
 
-    # Update/Add the necessary fields using jq
+    # Update/Add the necessary fields using jq to ensure consistency
     CONFIG_CONTENT=$(echo "$CONFIG_CONTENT" | jq \
         '.domain = "192.168.86.32:8100"' | jq \
         '.api_subdomain = "192.168.86.32:8100"' | jq \
         '.allow_nipio_domains = true' | jq \
-        '.http_port = 8100' \
+        '.http_port = 8100' | jq \
+        '.config_name = "generated default config"' \
     )
     
     # Overwrite the file
@@ -54,7 +56,9 @@ else
     echo "Patched existing configuration file with IP:Port as the domain/subdomain and allow_nipio_domains: true."
 fi
 
-echo "Starting Puter Desktop on ${HOST}:${PORT} in PRODUCTION mode, trusting proxy..."
+echo "Starting Puter Desktop directly with required environment variables..."
 
-# Execute the application.
-exec npm start
+# Final Execution: Use 'exec env' to ensure all environment variables are correctly
+# injected into the 'node' process that runs the Puter application, preventing the 
+# "config_name is required" error.
+exec env HOST="$HOST" PORT="$PORT" NODE_ENV="$NODE_ENV" TRUST_PROXY="$TRUST_PROXY" CONFIG_NAME="$CONFIG_NAME" node ./tools/run-selfhosted.js
