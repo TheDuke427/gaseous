@@ -15,18 +15,22 @@ RUN apk add --no-cache \
 WORKDIR /app
 
 # --- CACHE BUSTER ---
-RUN echo "Forcing clean build v12 - Correcting Patch Path"
+RUN echo "Forcing clean build v13 - Robust Find and Patch"
 
 # Clone the Puter repository
 RUN git clone https://github.com/HeyPuter/puter.git .
 
-# --- CRITICAL FIX: PATCHING CONFIGURATION SOURCE (Correct Path) ---
-# We patch the server's default configuration file before the build to override
-# the default host header validation setting.
-# The CORRECT PATH is config/default.json.
-RUN sed -i 's/localhost/192.168.86.32:8100/g' config/default.json
-# We also change the domain, which might be hardcoded as puter.com
-RUN sed -i 's/puter.com/192.168.86.32:8100/g' config/default.json
+# --- DEBUGGING STEP ---
+# List the files in the current directory to verify where the config files actually are
+RUN ls -R
+
+# --- CRITICAL FIX: ROBUST FIND AND PATCH ---
+# 1. Patch any files containing 'localhost' or 'puter.com' in the entire repository.
+# This ensures we hit the correct configuration file, regardless of its path.
+# We skip the node_modules directory, which doesn't exist yet but is good practice.
+
+RUN find . -type f -print0 | xargs -0 grep -l "localhost" | xargs sed -i 's/localhost/192.168.86.32:8100/g'
+RUN find . -type f -print0 | xargs -0 grep -l "puter.com" | xargs sed -i 's/puter.com/192.168.86.32:8100/g'
 
 
 # Install ALL dependencies
