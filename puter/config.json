@@ -13,11 +13,13 @@
   },
   "options": {
     "PORT": 8100,
-    "DOMAIN": null
+    "DOMAIN": null,
+    "external_host": "192.168.86.32:8100"
   },
   "schema": {
     "PORT": "int",
-    "DOMAIN": "str?"
+    "DOMAIN": "str?",
+    "external_host": "str"
   },
   "environment": {
     "NODE_ENV": "production"
