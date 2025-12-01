@@ -5,32 +5,38 @@
 # CRITICAL FIX 1: Set the host to 0.0.0.0 (all interfaces). 
 export HOST="0.0.0.0"
 
-# Set the internal port as defined by the EXPOSE instruction.
+# Set the internal port.
 export PORT="8100"
 
-# Load the custom 'puter' section from the Home Assistant add-on configuration file.
-if [ -f /data/options.json ]; then
-    echo "Loading configuration from /data/options.json..."
-    
-    # Load the entire 'puter' object for application configuration
-    export PUTER_CONFIG="$(jq -c '.puter' /data/options.json)"
+# --- Host Header and Domain Fix ---
+# Read the entire config.json (which should now contain the external_host)
+CONFIG_FILE="/config.json" # Assuming the config.json is copied to the root or /config/
 
-    # CRITICAL FIX 2: Read the 'external_host' value from the configuration.
-    EXTERNAL_HOST="$(jq -r '.external_host' /data/options.json)"
+if [ -f "$CONFIG_FILE" ]; then
+    echo "Reading external host from $CONFIG_FILE..."
     
-    if [ ! -z "$EXTERNAL_HOST" ]; then
+    # Read the 'external_host' value from the configuration. 
+    # NOTE: This assumes the external_host is defined within the .options object of the add-on config.
+    EXTERNAL_HOST="$(jq -r '.options.external_host' "$CONFIG_FILE")"
+    
+    if [ ! -z "$EXTERNAL_HOST" ] && [ "$EXTERNAL_HOST" != "null" ]; then
         echo "Detected external host: $EXTERNAL_HOST"
-        # Set an environment variable to allow this host in the server's whitelist.
-        # This fixes the "Invalid host header" error.
-        # We include 0.0.0.0 and localhost (internal) as fallbacks.
-        export PUTER_ALLOWED_HOSTS="0.0.0.0,localhost,${EXTERNAL_HOST}"
+        
+        # 1. Set the official PUTER_DOMAIN variable to the external access address.
+        # This is often the required variable for fixing the host header.
+        export PUTER_DOMAIN="${EXTERNAL_HOST}"
+        
+        # 2. Set the PUTER_ALLOWED_HOSTS variable (just in case it's used)
+        # We allow localhost (internal), 0.0.0.0 (internal), and the external access point.
+        export PUTER_ALLOWED_HOSTS="localhost,0.0.0.0,${EXTERNAL_HOST}"
     else
-        echo "No external_host configured. Falling back to internal hosts only."
-        export PUTER_ALLOWED_HOSTS="0.0.0.0,localhost"
+        echo "No valid external_host found in config. Falling back to internal."
+        export PUTER_DOMAIN="localhost:8100"
+        export PUTER_ALLOWED_HOSTS="localhost,0.0.0.0"
     fi
 fi
 
 echo "Starting Puter Desktop on ${HOST}:${PORT} using 'npm start'..."
 
-# Use 'npm start' to run the application.
+# Execute the application.
 exec npm start
