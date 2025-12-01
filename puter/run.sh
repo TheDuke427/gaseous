@@ -2,37 +2,22 @@
 
 # --- Puter Server Configuration ---
 
-# CRITICAL: Server must listen on all interfaces for HA access.
+# CRITICAL FIX 1: Server must listen on all interfaces for HA access.
 export HOST="0.0.0.0"
+
+# Set the internal port.
 export PORT="8100"
 
-# --- Host Header and Domain Configuration ---
-CONFIG_OPTIONS_FILE="/data/options.json" 
+# Set environment to production for best performance.
+export NODE_ENV="production"
 
-if [ -f "$CONFIG_OPTIONS_FILE" ]; then
-    echo "Loading options from $CONFIG_OPTIONS_FILE..."
-    
-    # Read the external_host value from the add-on options
-    EXTERNAL_HOST="$(jq -r '.options.external_host' "$CONFIG_OPTIONS_FILE")"
-    
-    # Set the official PUTER_DOMAIN variable
-    if [ ! -z "$EXTERNAL_HOST" ] && [ "$EXTERNAL_HOST" != "null" ]; then
-        echo "Detected external host: $EXTERNAL_HOST"
-        export PUTER_DOMAIN="${EXTERNAL_HOST}"
-    fi
-fi
+# --- CRITICAL FIX: TRUST PROXY ---
+# This variable (standard in Express/Node applications) tells the server to trust 
+# the incoming host headers provided by the Home Assistant Supervisor proxy.
+# This should resolve the "Invalid host header" error once and for all.
+export TRUST_PROXY="true"
 
-# --- CRITICAL FIX: HOST HEADER BYPASS V3 ---
-# 1. Force environment to development to relax host header security.
-export NODE_ENV="development"
-# 2. Re-export all known bypass variables, just in case.
-export DISABLE_HOST_CHECK="true"
-export DANGEROUSLY_DISABLE_HOST_CHECK="true"
-export PUTERE_DEV_MODE="true"
-export NODE_TLS_REJECT_UNAUTHORIZED="0"
-
-
-echo "Starting Puter Desktop on ${HOST}:${PORT} in DEVELOPMENT mode using 'npm start'..."
+echo "Starting Puter Desktop on ${HOST}:${PORT} in PRODUCTION mode, trusting proxy..."
 
 # Execute the application.
 exec npm start
