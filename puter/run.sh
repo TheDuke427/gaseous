@@ -7,23 +7,21 @@ NODE_ENV="production"
 TRUST_PROXY="true"
 CONFIG_NAME="selfhosted" 
 
-# --- Dependency Installation and Build (Fix for worker assets, webpack-cli, and complex installs) ---
+# --- Dependency Installation and Build (Fix: Ignoring the failing 'husky' script) ---
 echo "--- Running Initial Dependencies and Build ---"
 (
     set -e
     
-    # CRITICAL FIX 1: Install required global tools (webpack/webpack-cli) 
-    # as they are needed for dependency lifecycle scripts during the main install.
+    # Install global build tools needed for the main build commands
     echo "Installing global build tools: webpack and webpack-cli..."
     npm install -g webpack webpack-cli
 
-    # CRITICAL FIX 2: Run the main install with the legacy flag to bypass 
-    # potential peer dependency conflicts that are often related to build failures.
-    echo "Running 'npm install' with --legacy-peer-deps..."
-    npm install --legacy-peer-deps
+    # CRITICAL FIX: Install dependencies, ignoring the 'prepare' script (which executes 'husky') 
+    # and using --legacy-peer-deps to avoid complex dependency tree conflicts.
+    echo "Running 'npm install' with --ignore-scripts and --legacy-peer-deps..."
+    npm install --ignore-scripts --legacy-peer-deps
     
-    # CRITICAL FIX 3: Run the top-level build that compiles the TypeScript assets 
-    # (which includes the missing worker preamble).
+    # Run the top-level build that compiles the TypeScript assets (which includes the missing worker preamble).
     echo "Running 'npm run build:ts' to compile all TypeScript assets..."
     npm run build:ts
     
