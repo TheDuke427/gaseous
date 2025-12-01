@@ -1,34 +1,24 @@
 #!/usr/bin/env bash
-# Exit immediately if a command exits with a non-zero status
-set -e
 
-# --- Configuration Loading ---
-# Home Assistant passes configuration options via /data/options.json
-# We use 'jq' (installed in the Dockerfile) to parse the JSON file
+# --- Puter Server Configuration ---
 
-# Load PORT and DOMAIN from the add-on configuration
-PORT=$(jq --raw-output ".PORT" /data/options.json)
-DOMAIN=$(jq --raw-output ".DOMAIN" /data/options.json)
+# CRITICAL FIX: Set the host to 0.0.0.0 (all interfaces). 
+# This is mandatory for the Home Assistant Supervisor/Ingress proxy 
+# to successfully connect to the container's exposed port.
+export HOST="0.0.0.0"
 
-# --- Puter Environment Setup ---
-# Set the host to listen on all interfaces (required for containerization)
-export PUTER_HOST="0.0.0.0"
-# Set the port from the add-on configuration
-export PUTER_PORT=$PORT
+# Set the internal port as defined by the EXPOSE instruction in the Dockerfile.
+export PORT="8100"
 
-# If a domain is specified, set the PUTER_DOMAIN environment variable
-if [ -n "$DOMAIN" ] && [ "$DOMAIN" != "null" ]; then
-    echo "Puter will use domain: $DOMAIN"
-    export PUTER_DOMAIN=$DOMAIN
+# Load the custom 'puter' section from the Home Assistant add-on configuration file.
+# We use the installed 'jq' utility for this JSON parsing.
+if [ -f /data/options.json ]; then
+    echo "Loading configuration from /data/options.json..."
+    export PUTER_CONFIG="$(jq -c '.puter' /data/options.json)"
 fi
 
-# Change directory to the application root
-cd /app
+echo "Starting Puter Desktop on ${HOST}:${PORT}..."
 
-echo "Starting Puter Desktop Environment..."
-echo "Host: $PUTER_HOST, Port: $PUTER_PORT"
-
-# Execute the Puter start script using 'npm start'
-# 'exec' ensures that the application replaces the current shell, making it PID 1
-# which is important for proper container signal handling.
-exec npm start
+# Execute the application's main server file.
+# Based on the GitHub repository, this is typically the entry point for starting the web server.
+exec node server/main.js
