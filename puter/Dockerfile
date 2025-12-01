@@ -14,7 +14,7 @@ RUN apk add --no-cache \
 WORKDIR /app
 
 # --- CACHE BUSTER ---
-RUN echo "Forcing clean build v8 - Bash in Production"
+RUN echo "Forcing clean build v9 - Install jq in Production"
 
 # Clone the Puter repository
 RUN git clone https://github.com/HeyPuter/puter.git .
@@ -31,8 +31,8 @@ FROM node:lts-alpine
 
 WORKDIR /app
 
-# CRITICAL FIX: Install bash here, as it is required to execute the run.sh script.
-RUN apk add --no-cache bash
+# CRITICAL FIX: Install bash AND jq here, as they are required to execute the run.sh script.
+RUN apk add --no-cache bash jq
 
 # Step 1: Copy package files and install ONLY production dependencies.
 COPY --from=builder /app/package.json /app/package-lock.json ./
