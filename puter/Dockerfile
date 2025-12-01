@@ -15,10 +15,19 @@ RUN apk add --no-cache \
 WORKDIR /app
 
 # --- CACHE BUSTER ---
-RUN echo "Forcing clean build v10 - Final Host Header Patch"
+RUN echo "Forcing clean build v11 - Patching default.json"
 
 # Clone the Puter repository
 RUN git clone https://github.com/HeyPuter/puter.git .
+
+# --- CRITICAL FIX: PATCHING CONFIGURATION SOURCE ---
+# We patch the server's default configuration file before the build to override
+# the default host header validation setting which is causing the failure.
+# This assumes the config is at server/config/default.json and uses 'localhost' as a default host.
+RUN sed -i 's/localhost/192.168.86.32:8100/g' server/config/default.json
+# We also need to change the domain, which might be hardcoded as puter.com
+RUN sed -i 's/puter.com/192.168.86.32:8100/g' server/config/default.json
+
 
 # Install ALL dependencies
 RUN npm install
@@ -26,12 +35,6 @@ RUN npm install
 # Run the full build process
 RUN npm run build
 
-# --- CRITICAL FIX: PATCHING BUILD ARTIFACTS ---
-# Use sed to replace all instances of a default local host/domain 
-# with the required external IP:Port for Home Assistant access.
-# This bypasses the deep host header check in the application code.
-# The target is the 'dist' directory where the final files reside.
-RUN find /app/dist -type f \( -name "*.js" -o -name "*.html" -o -name "*.json" \) -print0 | xargs -0 sed -i 's/localhost/192.168.86.32:8100/g'
 
 # --- STAGE 2: PRODUCTION RUNTIME ---
 # Use a clean, minimal Node image for the final production environment.
