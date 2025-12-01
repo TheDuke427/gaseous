@@ -2,13 +2,10 @@
 
 # --- Puter Server Configuration ---
 # Setting required environment variables for the runtime environment.
-# These variables define the environment and host configuration for the Puter server.
 HOST="0.0.0.0"
 PORT="8100"
 NODE_ENV="production"
 TRUST_PROXY="true"
-# CRITICAL FIX: Explicitly set the configuration name required by the Kernel 
-# to bypass the "config_name is required" error.
 CONFIG_NAME="selfhosted" 
 
 CONFIG_PATH="/etc/puter/config.json"
@@ -23,7 +20,6 @@ mkdir -p "$CONFIG_DIR"
 if [ ! -f "$CONFIG_PATH" ]; then
     echo "Configuration file not found. Generating default with host settings."
     
-    # Generate the initial configuration content with necessary domain, API, and port settings.
     cat > "$CONFIG_PATH" << EOF
 {
   "domain": "192.168.86.32:8100",
@@ -56,9 +52,23 @@ else
     echo "Patched existing configuration file with IP:Port as the domain/subdomain and allow_nipio_domains: true."
 fi
 
-echo "Starting Puter Desktop directly with required environment variables..."
+# --- Worker Preamble Build (Fix for WORKERS ERROR and TypeError) ---
+echo "--- Running Worker Preamble Build ---"
+# Change directory and run npm build for the worker files, which the kernel expects to be pre-built.
+if [ -d "/app/src/backend/src/worker" ]; then
+    echo "Building worker preamble from /app/src/backend/src/worker..."
+    # The parentheses execute the commands in a subshell, ensuring the main script's directory doesn't change.
+    (cd /app/src/backend/src/worker && npm run build)
+    if [ $? -eq 0 ]; then
+        echo "Worker preamble build successful."
+    else
+        echo "WARNING: Worker preamble build failed. The application may not function correctly."
+    fi
+else
+    echo "Worker directory not found. Assuming pre-built environment or that the build is not required."
+fi
 
-# Final Execution: Use 'exec env' to ensure all environment variables are correctly
-# injected into the 'node' process that runs the Puter application, preventing the 
-# "config_name is required" error.
+echo "--- Starting Puter Desktop ---"
+
+# Final Execution: Pass environment variables explicitly and run the application.
 exec env HOST="$HOST" PORT="$PORT" NODE_ENV="$NODE_ENV" TRUST_PROXY="$TRUST_PROXY" CONFIG_NAME="$CONFIG_NAME" node ./tools/run-selfhosted.js
