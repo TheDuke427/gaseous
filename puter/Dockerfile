@@ -14,9 +14,8 @@ RUN apk add --no-cache \
 WORKDIR /app
 
 # --- CACHE BUSTER ---
-# This line is added solely to invalidate the cache for all subsequent steps (clone, install, build).
-# It forces Docker to perform a clean build, ensuring all necessary files are present.
-RUN echo "Forcing a clean build for 12012025-v5"
+# This line is critical to force a clean build, bypassing cached layers that may have resulted in missing files.
+RUN echo "Forcing clean build v6"
 
 # Clone the Puter repository
 RUN git clone https://github.com/HeyPuter/puter.git .
@@ -24,7 +23,7 @@ RUN git clone https://github.com/HeyPuter/puter.git .
 # Install ALL dependencies
 RUN npm install
 
-# Run the full build process
+# Run the full build process (This step succeeded in the previous log)
 RUN npm run build
 
 # --- STAGE 2: PRODUCTION RUNTIME ---
@@ -33,18 +32,13 @@ FROM node:lts-alpine
 
 WORKDIR /app
 
-# Copy package files and install ONLY production dependencies.
+# Step 1: Copy package files and install ONLY production dependencies.
 COPY --from=builder /app/package.json /app/package-lock.json ./
 RUN npm install --production
 
-# Copy the entire repository structure and built assets
-COPY --from=builder /app/dist ./dist
-COPY --from=builder /app/src ./src
-COPY --from=builder /app/public ./public
-COPY --from=builder /app/server ./server
-COPY --from=builder /app/extensions ./extensions
-COPY --from=builder /app/.env.example ./.env.example
-COPY --from=builder /app/build-info.json ./build-info.json
+# Step 2: Copy ALL built artifacts and source files from the builder's /app directory.
+# This single command recursively copies all contents (src, dist, public, server, config files).
+COPY --from=builder /app/ ./
 
 # Expose the configured port 8100
 EXPOSE 8100
