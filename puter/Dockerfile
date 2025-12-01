@@ -1,8 +1,8 @@
 # --- STAGE 1: BUILDER ---
-# Use a standard Node image for the build environment. This is where we install all dev dependencies.
+# Use a standard Node image for the build environment. This stage is temporary.
 FROM node:lts-alpine AS builder
 
-# Install OS-level build dependencies needed for Puter's native modules (e.g., better-sqlite3)
+# Install OS-level build dependencies (git, build-base, python3 for native modules)
 RUN apk add --no-cache \
     git \
     bash \
@@ -13,30 +13,31 @@ RUN apk add --no-cache \
 
 WORKDIR /app
 
+# --- CACHE BUSTER ---
+# This line is added solely to invalidate the cache for all subsequent steps (clone, install, build).
+# It forces Docker to perform a clean build, ensuring all necessary files are present.
+RUN echo "Forcing a clean build for 12012025-v5"
+
 # Clone the Puter repository
 RUN git clone https://github.com/HeyPuter/puter.git .
 
-# Install ALL dependencies (including dev dependencies necessary for the build process)
-# Use a single RUN command to ensure all dependency layers are combined.
+# Install ALL dependencies
 RUN npm install
 
-# Run the full build process (this is the step that was failing)
+# Run the full build process
 RUN npm run build
 
-# --- STAGE 2: PRODUCTION ---
-# Use a much smaller, clean Node image for the final runtime environment.
+# --- STAGE 2: PRODUCTION RUNTIME ---
+# Use a clean, minimal Node image for the final production environment.
 FROM node:lts-alpine
 
-# Set the working directory
 WORKDIR /app
 
-# Install only the runtime dependencies (production dependencies)
-# We install here so the node_modules structure is correct for Alpine, but we only install prod deps.
+# Copy package files and install ONLY production dependencies.
 COPY --from=builder /app/package.json /app/package-lock.json ./
 RUN npm install --production
 
-# Copy the built files from the builder stage
-# Puter's core logic and built assets are now copied in, avoiding any build issues.
+# Copy the entire repository structure and built assets
 COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/src ./src
 COPY --from=builder /app/public ./public
