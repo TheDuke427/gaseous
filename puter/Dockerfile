@@ -15,18 +15,18 @@ RUN apk add --no-cache \
 WORKDIR /app
 
 # --- CACHE BUSTER ---
-RUN echo "Forcing clean build v11 - Patching default.json"
+RUN echo "Forcing clean build v12 - Correcting Patch Path"
 
 # Clone the Puter repository
 RUN git clone https://github.com/HeyPuter/puter.git .
 
-# --- CRITICAL FIX: PATCHING CONFIGURATION SOURCE ---
+# --- CRITICAL FIX: PATCHING CONFIGURATION SOURCE (Correct Path) ---
 # We patch the server's default configuration file before the build to override
-# the default host header validation setting which is causing the failure.
-# This assumes the config is at server/config/default.json and uses 'localhost' as a default host.
-RUN sed -i 's/localhost/192.168.86.32:8100/g' server/config/default.json
-# We also need to change the domain, which might be hardcoded as puter.com
-RUN sed -i 's/puter.com/192.168.86.32:8100/g' server/config/default.json
+# the default host header validation setting.
+# The CORRECT PATH is config/default.json.
+RUN sed -i 's/localhost/192.168.86.32:8100/g' config/default.json
+# We also change the domain, which might be hardcoded as puter.com
+RUN sed -i 's/puter.com/192.168.86.32:8100/g' config/default.json
 
 
 # Install ALL dependencies
