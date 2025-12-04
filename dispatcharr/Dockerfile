@@ -1,49 +1,22 @@
-# Stage 1: Build stage for dependency installation
-FROM python:3.11-slim AS build
+# Use an official Python runtime as a parent image
+FROM python:3.11-slim
 
-# Set the working directory
+# Set the working directory in the container
 WORKDIR /app
 
-# Install Dispatcharr dependencies (assuming it's available via pip)
+# Install dependencies
+# Copy only the requirements file first to leverage Docker cache
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Stage 2: Final image stage
-FROM python:3.11-slim
+# Copy the rest of the application code
+# This copies main.py and the static/ directory
+COPY . .
 
-# Set the Python path so the application module can be found by uvicorn
-ENV PYTHONPATH=/app
-# Set the final working directory
-WORKDIR /app
-
-# Install necessary packages for the runtime (jq is needed for run.sh)
-RUN apt-get update && \
-    apt-get install -y --no-install-recommends jq && \
-    rm -rf /var/lib/apt/lists/*
-
-# Copy the built dependencies from the build stage
-COPY --from=build /usr/local/lib/python3.11/site-packages /usr/local/lib/python3.11/site-packages
-# Copy the executable scripts (like 'uvicorn') from the build stage
-COPY --from=build /usr/local/bin /usr/local/bin
-
-# Copy the application source code
-COPY ./ /app
-
-# Copy the entrypoint script
-COPY run.sh /usr/bin/run.sh
-
-# --- FIX: Change permissions AS ROOT user BEFORE switching user ---
-# Ensure the script is executable while still running as root.
-RUN chmod +x /usr/bin/run.sh
-
-# Create a non-root user for security (Home Assistant best practice)
-# We must remove 'USER appuser' here to ensure the entrypoint (CMD) can read
-# /data/options.json, which often requires root privileges due to Supervisor's
-# default directory permissions. The user is still created if needed later.
-RUN groupadd -r appuser && useradd -r -g appuser appuser
-
-# Expose the default port for Dispatcharr
+# Expose the port the app runs on (matching DEFAULT_PORT in main.py)
 EXPOSE 9500
 
-# Set the entrypoint
-CMD ["/usr/bin/run.sh"]
+# Command to run the application using Uvicorn.
+# IMPORTANT CHANGE: The entry point is now 'main:app'
+# 'main' refers to main.py, and 'app' refers to the FastAPI instance variable.
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "9500"]
