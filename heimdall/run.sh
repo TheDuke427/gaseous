@@ -78,9 +78,12 @@ if [ "${USE_SSL}" = "true" ]; then
             -subj "/C=US/ST=State/L=City/O=Heimdall/CN=localhost"
     fi
 else
-    bashio::log.info "SSL disabled"
-    # Use echo instead of heredoc to avoid syntax issues
-    echo 'server {
+    bashio::log.info "SSL disabled, configuring nginx for HTTP only..."
+fi
+
+# Create nginx config file
+cat > /etc/nginx/http.d/heimdall.conf <<'NGINX_CONFIG'
+server {
     listen 80 default_server;
     listen [::]:80 default_server;
     
@@ -112,8 +115,8 @@ else
     location ~ /\.(?!well-known).* {
         deny all;
     }
-}' > /etc/nginx/http.d/heimdall.conf
-fi
+}
+NGINX_CONFIG
 
 # Create searchproviders.yaml if it doesn't exist
 if [ ! -f "/config/heimdall/searchproviders.yaml" ]; then
@@ -201,114 +204,7 @@ while true; do
     fi
     
     sleep 30
-donemkdir -p /config/heimdall/logs
-mkdir -p /heimdall/storage/app/public
-
-# Link storage directories
-rm -rf /heimdall/storage/app/public/backgrounds
-ln -s /config/heimdall/backgrounds /heimdall/storage/app/public/backgrounds
-
-rm -rf /heimdall/storage/app/public/icons
-ln -s /config/heimdall/icons /heimdall/storage/app/public/icons
-
-rm -rf /heimdall/storage/logs
-ln -s /config/heimdall/logs /heimdall/storage/logs
-
-# Update .env file with configuration
-bashio::log.info "Updating Heimdall configuration..."
-sed -i "s|APP_URL=.*|APP_URL=http://localhost|g" /heimdall/.env
-
-# Remove any existing ALLOW_INTERNAL_REQUESTS lines first
-sed -i '/ALLOW_INTERNAL_REQUESTS/d' /heimdall/.env
-
-# Set ALLOW_INTERNAL_REQUESTS in .env
-if [ "${ALLOW_INTERNAL}" = "true" ]; then
-    echo "ALLOW_INTERNAL_REQUESTS=true" >> /heimdall/.env
-else
-    echo "ALLOW_INTERNAL_REQUESTS=false" >> /heimdall/.env
-fi
-
-# Handle SSL certificates
-if [ "${USE_SSL}" = "true" ]; then
-    bashio::log.info "SSL enabled, setting up certificates..."
-    
-    # Copy certificates from Home Assistant SSL directory
-    if [ -f "/ssl/${CERTFILE}" ] && [ -f "/ssl/${KEYFILE}" ]; then
-        cp /ssl/${CERTFILE} /ssl/fullchain.pem
-        cp /ssl/${KEYFILE} /ssl/privkey.pem
-        bashio::log.info "SSL certificates copied successfully"
-    else
-        bashio::log.warning "SSL certificates not found, generating self-signed certificates..."
-        openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
-            -keyout /ssl/privkey.pem \
-            -out /ssl/fullchain.pem \
-            -subj "/C=US/ST=State/L=City/O=Heimdall/CN=localhost"
-    fi
-else
-    bashio::log.info "SSL disabled"
-    # Create a new config without SSL
-    cat > /etc/nginx/http.d/heimdall.conf << 'NGINX_EOF'
-server {
-    listen 80 default_server;
-    listen [::]:80 default_server;
-    
-    root /heimdall/public;
-    index index.php index.html;
-    
-    server_name _;
-    
-    client_max_body_size 30M;
-    
-    location / {
-        try_files $uri $uri/ /index.php?$query_string;
-    }
-    
-    location ~ \.php$ {
-        fastcgi_pass 127.0.0.1:9000;
-        fastcgi_index index.php;
-        fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
-        include fastcgi_params;
-        fastcgi_param PATH_INFO $fastcgi_path_info;
-        fastcgi_param PATH_TRANSLATED $document_root$fastcgi_path_info;
-        fastcgi_read_timeout 600;
-    }
-    
-    location ~ /\.ht {
-        deny all;
-    }
-    
-    location ~ /\.(?!well-known).* {
-        deny all;
-    }
-}
-NGINX_EOF
-fi
-
-# Create searchproviders.yaml if it doesn't exist
-if [ ! -f "/config/heimdall/searchproviders.yaml" ]; then
-    bashio::log.info "Creating searchproviders.yaml..."
-    if [ -f "/heimdall/storage/app/searchproviders.yaml" ]; then
-        cp /heimdall/storage/app/searchproviders.yaml /config/heimdall/searchproviders.yaml
-    fi
-fi
-
-# Link searchproviders.yaml if it exists
-if [ -f "/config/heimdall/searchproviders.yaml" ]; then
-    rm -f /heimdall/storage/app/searchproviders.yaml
-    ln -s /config/heimdall/searchproviders.yaml /heimdall/storage/app/searchproviders.yaml
-fi
-
-# CRITICAL: Set proper permissions BEFORE running any artisan commands
-bashio::log.info "Setting permissions (this may take a minute on first run)..."
-
-# Set ownership for the entire heimdall directory
-chown -R heimdall:heimdall /heimdall
-
-# Set ownership for the config directory
-chown -R heimdall:heimdall /config/heimdall
-
-# Make sure storage directories are writable
-chmod -R 775 /heimdall/storage
+done5 /heimdall/storage
 chmod -R 775 /heimdall/bootstrap/cache
 chmod -R 775 /config/heimdall
 
