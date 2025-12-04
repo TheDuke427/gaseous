@@ -13,6 +13,8 @@ FROM python:3.11-slim
 
 # Set the Python path so the application module can be found by uvicorn
 ENV PYTHONPATH=/app
+# Set the final working directory
+WORKDIR /app
 
 # Install necessary packages for the runtime (jq is needed for run.sh)
 RUN apt-get update && \
@@ -26,7 +28,6 @@ COPY --from=build /usr/local/bin /usr/local/bin
 
 # Copy the application source code
 COPY ./ /app
-WORKDIR /app
 
 # Copy the entrypoint script
 COPY run.sh /usr/bin/run.sh
