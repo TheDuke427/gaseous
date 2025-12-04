@@ -11,6 +11,9 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Stage 2: Final image stage
 FROM python:3.11-slim
 
+# Set the Python path so the application module can be found by uvicorn
+ENV PYTHONPATH=/app
+
 # Install necessary packages for the runtime (jq is needed for run.sh)
 RUN apt-get update && \
     apt-get install -y --no-install-recommends jq && \
