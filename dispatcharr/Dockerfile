@@ -18,6 +18,8 @@ RUN apt-get update && \
 
 # Copy the built dependencies from the build stage
 COPY --from=build /usr/local/lib/python3.11/site-packages /usr/local/lib/python3.11/site-packages
+# Copy the executable scripts (like 'uvicorn') from the build stage
+COPY --from=build /usr/local/bin /usr/local/bin
 
 # Copy the application source code
 COPY ./ /app
