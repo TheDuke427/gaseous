@@ -1,43 +1,37 @@
 #!/usr/bin/env bashio
 
-# Get configuration from Home Assistant with defaults
+# ============================
+# Load Configuration
+# ============================
 TIMEZONE=$(bashio::config 'timezone' 'America/New_York')
 ALLOW_INTERNAL=$(bashio::config 'allow_internal_requests' 'true')
 USE_SSL=$(bashio::config 'ssl' 'false')
 CERTFILE=$(bashio::config 'certfile' 'fullchain.pem')
 KEYFILE=$(bashio::config 'keyfile' 'privkey.pem')
 
-# Set timezone
 bashio::log.info "Setting timezone to ${TIMEZONE}..."
 ln -snf /usr/share/zoneinfo/${TIMEZONE} /etc/localtime
 echo "${TIMEZONE}" > /etc/timezone
 
-# Create persistent storage directory if it doesn't exist
-if [ ! -d "/config/heimdall" ]; then
-    bashio::log.info "Creating Heimdall config directory..."
-    mkdir -p /config/heimdall
-fi
 
-# Setup database first
-mkdir -p /config/heimdall/database
+# ============================
+# Storage Setup
+# ============================
+bashio::log.info "Creating persistence directories..."
+mkdir -p /config/heimdall/{database,backgrounds,icons,logs}
+mkdir -p /heimdall/storage/app/public
+
+# Database
 if [ ! -f "/config/heimdall/database/app.sqlite" ]; then
-    bashio::log.info "Creating initial database..."
+    bashio::log.info "Creating initial SQLite DB..."
     touch /config/heimdall/database/app.sqlite
     chmod 664 /config/heimdall/database/app.sqlite
 fi
 
-# Link database
 rm -f /heimdall/database/app.sqlite
 ln -s /config/heimdall/database/app.sqlite /heimdall/database/app.sqlite
 
-# Setup storage directories
-bashio::log.info "Setting up persistent storage..."
-mkdir -p /config/heimdall/backgrounds
-mkdir -p /config/heimdall/icons
-mkdir -p /config/heimdall/logs
-mkdir -p /heimdall/storage/app/public
-
-# Link storage directories
+# Storage Links
 rm -rf /heimdall/storage/app/public/backgrounds
 ln -s /config/heimdall/backgrounds /heimdall/storage/app/public/backgrounds
 
@@ -47,28 +41,129 @@ ln -s /config/heimdall/icons /heimdall/storage/app/public/icons
 rm -rf /heimdall/storage/logs
 ln -s /config/heimdall/logs /heimdall/storage/logs
 
-# Update .env file with configuration
-bashio::log.info "Updating Heimdall configuration..."
+
+# ============================
+# Application ENV Settings
+# ============================
+bashio::log.info "Updating .env..."
 sed -i "s|APP_URL=.*|APP_URL=http://localhost|g" /heimdall/.env
-
-# Remove any existing ALLOW_INTERNAL_REQUESTS lines first
 sed -i '/ALLOW_INTERNAL_REQUESTS/d' /heimdall/.env
+echo "ALLOW_INTERNAL_REQUESTS=${ALLOW_INTERNAL}" >> /heimdall/.env
 
-# Set ALLOW_INTERNAL_REQUESTS in .env
-if [ "${ALLOW_INTERNAL}" = "true" ]; then
-    echo "ALLOW_INTERNAL_REQUESTS=true" >> /heimdall/.env
+
+# ============================
+# SSL Handling
+# ============================
+if [ "${USE_SSL}" = "true" ]; then
+    bashio::log.info "SSL enabled."
+
+    if [ -f "/ssl/${CERTFILE}" ] && [ -f "/ssl/${KEYFILE}" ]; then
+        cp "/ssl/${CERTFILE}" /ssl/fullchain.pem
+        cp "/ssl/${KEYFILE}" /ssl/privkey.pem
+    else
+        bashio::log.warning "SSL certs missing. Generating self-signed certificate..."
+        openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
+            -keyout /ssl/privkey.pem \
+            -out /ssl/fullchain.pem \
+            -subj "/C=US/ST=State/L=City/O=Heimdall/CN=localhost"
+    fi
 else
-    echo "ALLOW_INTERNAL_REQUESTS=false" >> /heimdall/.env
+    bashio::log.info "SSL disabled."
 fi
 
-# Handle SSL certificates
-if [ "${USE_SSL}" = "true" ]; then
-    bashio::log.info "SSL enabled, setting up certificates..."
-    
-    # Copy certificates from Home Assistant SSL directory
-    if [ -f "/ssl/${CERTFILE}" ] && [ -f "/ssl/${KEYFILE}" ]; then
-        cp /ssl/${CERTFILE} /ssl/fullchain.pem
-        cp /ssl/${KEYFILE} /ssl/privkey.pem
+
+# ============================
+# NGINX CONFIG
+# ============================
+bashio::log.info "Writing nginx config..."
+
+cat > /etc/nginx/http.d/heimdall.conf <<'EOF'
+server {
+    listen 80 default_server;
+    listen [::]:80 default_server;
+
+    root /heimdall/public;
+    index index.php index.html;
+
+    client_max_body_size 30M;
+
+    location / {
+        try_files $uri $uri/ /index.php?$query_string;
+    }
+
+    location ~ \.php$ {
+        fastcgi_pass 127.0.0.1:9000;
+        fastcgi_index index.php;
+        fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
+        include fastcgi_params;
+        fastcgi_read_timeout 600;
+    }
+
+    location ~ /\.ht {
+        deny all;
+    }
+
+    location ~ /\.(?!well-known).* {
+        deny all;
+    }
+}
+EOF
+
+
+# ============================
+# Permissions
+# ============================
+bashio::log.info "Setting permissions..."
+chown -R heimdall:heimdall /config/heimdall /heimdall
+chmod -R 775 /heimdall/storage /heimdall/bootstrap/cache /config/heimdall
+
+
+# ============================
+# Laravel Setup
+# ============================
+bashio::log.info "Running migrations and clearing cache..."
+cd /heimdall
+
+su heimdall -s /bin/sh -c "php artisan migrate --force" || true
+su heimdall -s /bin/sh -c "php artisan cache:clear" || true
+su heimdall -s /bin/sh -c "php artisan config:cache" || true
+su heimdall -s /bin/sh -c "php artisan storage:link" || true
+
+
+# ============================
+# Start Services
+# ============================
+bashio::log.info "Starting PHP-FPM..."
+php-fpm83 -F -R &
+PHP_PID=$!
+
+sleep 2
+
+bashio::log.info "Starting nginx..."
+nginx -g "daemon off;" &
+NGINX_PID=$!
+
+bashio::log.info "Heimdall is running!"
+
+
+# ============================
+# Service Monitor Loop
+# ============================
+while true; do
+    if ! kill -0 $PHP_PID 2>/dev/null; then
+        bashio::log.error "PHP-FPM crashed! Restarting..."
+        php-fpm83 -F -R &
+        PHP_PID=$!
+    fi
+
+    if ! kill -0 $NGINX_PID 2>/dev/null; then
+        bashio::log.error "Nginx crashed! Restarting..."
+        nginx -g "daemon off;" &
+        NGINX_PID=$!
+    fi
+
+    sleep 30
+done        cp /ssl/${KEYFILE} /ssl/privkey.pem
         bashio::log.info "SSL certificates copied successfully"
     else
         bashio::log.warning "SSL certificates not found, generating self-signed certificates..."
