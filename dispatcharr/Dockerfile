@@ -9,14 +9,15 @@ WORKDIR /app
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy the rest of the application code
-# This copies main.py and the static/ directory
+# Copy application files (main.py and static/)
 COPY . .
+
+# Copy the startup script and make it executable
+COPY run.sh .
+RUN chmod +x /app/run.sh
 
 # Expose the port the app runs on (matching DEFAULT_PORT in main.py)
 EXPOSE 9500
 
-# Command to run the application using Uvicorn.
-# IMPORTANT CHANGE: The entry point is now 'main:app'
-# 'main' refers to main.py, and 'app' refers to the FastAPI instance variable.
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "9500"]
+# IMPORTANT CHANGE: Use the script as the container's entry point.
+CMD ["/app/run.sh"]
