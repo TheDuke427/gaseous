@@ -1,36 +1,42 @@
 #!/usr/bin/env bash
 
-# Exit immediately if a command exits with a non-zero status.
 set -e
 
-# --- Configuration Reading ---
+# Configuration file path for Home Assistant Add-ons
+CONFIG_FILE="/data/options.json"
 
-# The Home Assistant add-on environment reads options from config.json
-# via the addon_config command.
+# Default port
+DEFAULT_PORT=9500
 
-# Read the configured port from the add-on options
-# The 'jq' tool is usually available in the base Home Assistant add-on environment.
-PORT=$(jq --raw-output '.port' /data/options.json)
+# Function to read options from config file using jq
+read_option() {
+    # Check if config file exists
+    if [ -f "$CONFIG_FILE" ]; then
+        # Use jq to extract the value from the config file.
+        # The 'port' key is expected to be under 'options' in /data/options.json
+        # 2>/dev/null suppresses any permission errors from jq (though we run as root now)
+        jq -r ".$1" "$CONFIG_FILE" 2>/dev/null
+    else
+        # Return an empty string if the config file is not found
+        echo ""
+    fi
+}
 
-if [ -z "$PORT" ]; then
-    echo "Error: 'port' option is missing in options.json."
-    exit 1
+# 1. Determine the PORT
+PORT=$(read_option 'port')
+
+# Use default port if reading from config failed or returned null/empty
+if [ -z "$PORT" ] || [ "$PORT" = "null" ]; then
+    PORT=$DEFAULT_PORT
 fi
 
 echo "Starting Dispatcharr on port: $PORT"
 
-# --- Application Startup ---
+# 2. Set the PORT environment variable for the application
+export PORT=$PORT
 
-# Assuming Dispatcharr is a Python script that runs like this:
-# python /app/dispatcharr.py --port $PORT
-
-# If Dispatcharr uses uvicorn/gunicorn or similar, you would adjust this command.
-# Based on the GitHub repo, it looks like it uses FastAPI/uvicorn.
-# We'll use the entry point from the Dispatcharr repo, which is likely:
-# uvicorn dispatcharr.main:app --host 0.0.0.0 --port $PORT
-
-# Execute the Dispatcharr server
-exec uvicorn dispatcharr.main:app --host 0.0.0.0 --port "$PORT" --log-level info
-
-# The 'exec' command replaces the shell with the uvicorn process, ensuring
-# signals (like SIGTERM from Docker/HA) are passed correctly to the application.
+# 3. Start the Uvicorn server
+# The command is '<module_name>:<application_instance_name>'
+# Since the app file is 'app.py' and the instance is 'app', the module is 'app:app'.
+# We also use reload=false as this is a production container entrypoint.
+exec uvicorn app:app --host 0.0.0.0 --port "$PORT" --log-level info
