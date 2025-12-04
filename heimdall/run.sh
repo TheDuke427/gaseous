@@ -80,6 +80,141 @@ if [ "${USE_SSL}" = "true" ]; then
 else
     bashio::log.info "SSL disabled"
     # Create a new config without SSL
+    cat > /etc/nginx/http.d/heimdall.conf << 'NGINX_EOF'
+server {
+    listen 80 default_server;
+    listen [::]:80 default_server;
+    
+    root /heimdall/public;
+    index index.php index.html;
+    
+    server_name _;
+    
+    client_max_body_size 30M;
+    
+    location / {
+        try_files $uri $uri/ /index.php?$query_string;
+    }
+    
+    location ~ \.php$ {
+        fastcgi_pass 127.0.0.1:9000;
+        fastcgi_index index.php;
+        fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
+        include fastcgi_params;
+        fastcgi_param PATH_INFO $fastcgi_path_info;
+        fastcgi_param PATH_TRANSLATED $document_root$fastcgi_path_info;
+        fastcgi_read_timeout 600;
+    }
+    
+    location ~ /\.ht {
+        deny all;
+    }
+    
+    location ~ /\.(?!well-known).* {
+        deny all;
+    }
+}
+NGINX_EOF
+fi
+
+# Create searchproviders.yaml if it doesn't exist
+if [ ! -f "/config/heimdall/searchproviders.yaml" ]; then
+    bashio::log.info "Creating searchproviders.yaml..."
+    if [ -f "/heimdall/storage/app/searchproviders.yaml" ]; then
+        cp /heimdall/storage/app/searchproviders.yaml /config/heimdall/searchproviders.yaml
+    fi
+fi
+
+# Link searchproviders.yaml if it exists
+if [ -f "/config/heimdall/searchproviders.yaml" ]; then
+    rm -f /heimdall/storage/app/searchproviders.yaml
+    ln -s /config/heimdall/searchproviders.yaml /heimdall/storage/app/searchproviders.yaml
+fi
+
+# CRITICAL: Set proper permissions BEFORE running any artisan commands
+bashio::log.info "Setting permissions (this may take a minute on first run)..."
+
+# Set ownership for the entire heimdall directory
+chown -R heimdall:heimdall /heimdall
+
+# Set ownership for the config directory
+chown -R heimdall:heimdall /config/heimdall
+
+# Make sure storage directories are writable
+chmod -R 775 /heimdall/storage
+chmod -R 775 /heimdall/bootstrap/cache
+chmod -R 775 /config/heimdall
+
+# Ensure the logs directory exists and has correct permissions
+touch /config/heimdall/logs/laravel-$(date +%Y-%m-%d).log
+chown heimdall:heimdall /config/heimdall/logs/laravel-$(date +%Y-%m-%d).log
+chmod 664 /config/heimdall/logs/laravel-$(date +%Y-%m-%d).log
+
+# Run database migrations
+bashio::log.info "Running database migrations..."
+cd /heimdall
+su heimdall -s /bin/sh -c "php artisan migrate --force" || true
+
+# Clear and rebuild caches
+bashio::log.info "Clearing application caches..."
+su heimdall -s /bin/sh -c "php artisan cache:clear" || true
+su heimdall -s /bin/sh -c "php artisan view:clear" || true
+su heimdall -s /bin/sh -c "php artisan config:cache" || true
+
+# Create storage link (allow failure if it already exists)
+su heimdall -s /bin/sh -c "php artisan storage:link" || true
+
+# Start PHP-FPM
+bashio::log.info "Starting PHP-FPM..."
+php-fpm83 -F -R &
+PHP_PID=$!
+
+# Wait for PHP-FPM to be ready
+sleep 2
+
+# Start nginx
+bashio::log.info "Starting Nginx..."
+nginx -g "daemon off;" &
+NGINX_PID=$!
+
+# Wait for services to start
+sleep 2
+
+bashio::log.info "Heimdall is running!"
+bashio::log.info "Access Heimdall at http://[YOUR_IP]:7990"
+if [ "${USE_SSL}" = "true" ]; then
+    bashio::log.info "Or via HTTPS at https://[YOUR_IP]:7991"
+fi
+
+# Monitor services
+while true; do
+    # Check if PHP-FPM is running
+    if ! kill -0 $PHP_PID 2>/dev/null; then
+        bashio::log.error "PHP-FPM crashed, restarting..."
+        php-fpm83 -F -R &
+        PHP_PID=$!
+    fi
+    
+    # Check if nginx is running
+    if ! kill -0 $NGINX_PID 2>/dev/null; then
+        bashio::log.error "Nginx crashed, restarting..."
+        nginx -g "daemon off;" &
+        NGINX_PID=$!
+    fi
+    
+    sleep 30
+done        cp /ssl/${KEYFILE} /ssl/privkey.pem
+        bashio::log.info "SSL certificates copied successfully"
+    else
+        bashio::log.warning "SSL certificates not found, generating self-signed certificates..."
+        openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
+            -keyout /ssl/privkey.pem \
+            -out /ssl/fullchain.pem \
+            -subj "/C=US/ST=State/L=City/O=Heimdall/CN=localhost"
+    fi
+else
+    bashio::log.info "SSL disabled"
+    # Create a new config without SSL
     cat > /etc/nginx/http.d/heimdall.conf << 'EOF'
 server {
     listen 80 default_server;
