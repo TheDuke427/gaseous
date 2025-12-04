@@ -1,4 +1,5 @@
 #!/usr/bin/env bashio
+set -euo pipefail
 
 # ============================
 # Load Configuration
@@ -10,12 +11,11 @@ CERTFILE=$(bashio::config 'certfile' 'fullchain.pem')
 KEYFILE=$(bashio::config 'keyfile' 'privkey.pem')
 
 bashio::log.info "Setting timezone to ${TIMEZONE}..."
-ln -snf /usr/share/zoneinfo/${TIMEZONE} /etc/localtime
+ln -snf "/usr/share/zoneinfo/${TIMEZONE}" /etc/localtime
 echo "${TIMEZONE}" > /etc/timezone
 
-
 # ============================
-# Storage Setup
+# Persistence / Storage Setup
 # ============================
 bashio::log.info "Creating persistence directories..."
 mkdir -p /config/heimdall/{database,backgrounds,icons,logs}
@@ -33,42 +33,162 @@ ln -s /config/heimdall/database/app.sqlite /heimdall/database/app.sqlite
 
 # Storage Links
 rm -rf /heimdall/storage/app/public/backgrounds
-ln -s /config/heimdall/backgrounds /heimdall/storage/app/public/backgrounds
+ln -s /config/heimdall/backgrounds /heimdall/storage/app/public/backgrounds || true
 
 rm -rf /heimdall/storage/app/public/icons
-ln -s /config/heimdall/icons /heimdall/storage/app/public/icons
+ln -s /config/heimdall/icons /heimdall/storage/app/public/icons || true
 
 rm -rf /heimdall/storage/logs
-ln -s /config/heimdall/logs /heimdall/storage/logs
-
+ln -s /config/heimdall/logs /heimdall/storage/logs || true
 
 # ============================
 # Application ENV Settings
 # ============================
 bashio::log.info "Updating .env..."
-sed -i "s|APP_URL=.*|APP_URL=http://localhost|g" /heimdall/.env
-sed -i '/ALLOW_INTERNAL_REQUESTS/d' /heimdall/.env
-echo "ALLOW_INTERNAL_REQUESTS=${ALLOW_INTERNAL}" >> /heimdall/.env
-
+if [ -f /heimdall/.env ]; then
+    sed -i "s|APP_URL=.*|APP_URL=http://localhost|g" /heimdall/.env || true
+    sed -i '/ALLOW_INTERNAL_REQUESTS/d' /heimdall/.env || true
+    echo "ALLOW_INTERNAL_REQUESTS=${ALLOW_INTERNAL}" >> /heimdall/.env
+else
+    bashio::log.warning "/heimdall/.env not found; skipping .env update"
+fi
 
 # ============================
-# SSL Handling
+# SSL Handling (copy or generate)
 # ============================
 if [ "${USE_SSL}" = "true" ]; then
-    bashio::log.info "SSL enabled."
-
+    bashio::log.info "SSL enabled; checking for certs..."
     if [ -f "/ssl/${CERTFILE}" ] && [ -f "/ssl/${KEYFILE}" ]; then
         cp "/ssl/${CERTFILE}" /ssl/fullchain.pem
         cp "/ssl/${KEYFILE}" /ssl/privkey.pem
+        bashio::log.info "SSL certificates copied to /ssl/fullchain.pem and /ssl/privkey.pem"
     else
-        bashio::log.warning "SSL certs missing. Generating self-signed certificate..."
+        bashio::log.warning "SSL certs not found; generating self-signed cert..."
         openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
             -keyout /ssl/privkey.pem \
             -out /ssl/fullchain.pem \
             -subj "/C=US/ST=State/L=City/O=Heimdall/CN=localhost"
+        bashio::log.info "Self-signed cert generated at /ssl/fullchain.pem"
     fi
 else
     bashio::log.info "SSL disabled."
+fi
+
+# ============================
+# Nginx config (HTTP only)
+# ============================
+bashio::log.info "Writing nginx config..."
+cat > /etc/nginx/http.d/heimdall.conf <<'EOF'
+server {
+    listen 80 default_server;
+    listen [::]:80 default_server;
+
+    root /heimdall/public;
+    index index.php index.html;
+
+    client_max_body_size 30M;
+
+    location / {
+        try_files $uri $uri/ /index.php?$query_string;
+    }
+
+    location ~ \.php$ {
+        fastcgi_pass 127.0.0.1:9000;
+        fastcgi_index index.php;
+        fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
+        include fastcgi_params;
+        fastcgi_read_timeout 600;
+    }
+
+    location ~ /\.ht {
+        deny all;
+    }
+
+    location ~ /\.(?!well-known).* {
+        deny all;
+    }
+}
+EOF
+
+# ============================
+# Permissions
+# ============================
+bashio::log.info "Setting ownership and permissions..."
+chown -R heimdall:heimdall /config/heimdall /heimdall || true
+chmod -R 775 /heimdall/storage /heimdall/bootstrap/cache /config/heimdall || true
+
+# Ensure today's log exists with correct perms
+LOGFILE="/config/heimdall/logs/laravel-$(date +%Y-%m-%d).log"
+touch "${LOGFILE}"
+chown heimdall:heimdall "${LOGFILE}" || true
+chmod 664 "${LOGFILE}" || true
+
+# ============================
+# Laravel Setup (migrate / cache / storage link)
+# ============================
+bashio::log.info "Running migrations and clearing caches..."
+cd /heimdall || true
+
+su heimdall -s /bin/sh -c "php artisan migrate --force --no-interaction" 2>&1 | head -n 50 || true
+su heimdall -s /bin/sh -c "php artisan cache:clear --no-interaction" 2>&1 | head -n 20 || true
+su heimdall -s /bin/sh -c "php artisan view:clear --no-interaction" 2>&1 | head -n 20 || true
+su heimdall -s /bin/sh -c "php artisan config:cache --no-interaction" 2>&1 | head -n 20 || true
+su heimdall -s /bin/sh -c "php artisan storage:link --no-interaction" 2>&1 | head -n 20 || true
+
+# Ensure searchproviders.yaml exists in /config and is linked into app storage
+if [ ! -f "/config/heimdall/searchproviders.yaml" ] && [ -f "/heimdall/storage/app/searchproviders.yaml" ]; then
+    cp /heimdall/storage/app/searchproviders.yaml /config/heimdall/searchproviders.yaml || true
+fi
+
+if [ -f "/config/heimdall/searchproviders.yaml" ]; then
+    rm -f /heimdall/storage/app/searchproviders.yaml || true
+    ln -s /config/heimdall/searchproviders.yaml /heimdall/storage/app/searchproviders.yaml || true
+fi
+
+# ============================
+# Start services
+# ============================
+bashio::log.info "Starting PHP-FPM..."
+php-fpm83 -F -R &
+PHP_PID=$!
+
+sleep 2
+
+bashio::log.info "Starting Nginx..."
+nginx
+NGINX_MASTER_PID=$(cat /var/run/nginx.pid 2>/dev/null || echo "")
+
+bashio::log.info "Heimdall should be running (HTTP)."
+
+# ============================
+# Process monitor loop
+# ============================
+while true; do
+    # restart php-fpm if missing
+    if ! kill -0 "${PHP_PID}" 2>/dev/null; then
+        bashio::log.error "PHP-FPM not running; restarting..."
+        php-fpm83 -F -R &
+        PHP_PID=$!
+    fi
+
+    # restart nginx if missing
+    if [ -n "${NGINX_MASTER_PID}" ]; then
+        if ! kill -0 "${NGINX_MASTER_PID}" 2>/dev/null; then
+            bashio::log.error "Nginx master not running; starting nginx..."
+            nginx
+            NGINX_MASTER_PID=$(cat /var/run/nginx.pid 2>/dev/null || echo "")
+        fi
+    else
+        # if we didn't capture pid earlier, try to start nginx and capture it
+        if ! pgrep -x nginx >/dev/null 2>&1; then
+            bashio::log.warning "Nginx not running; starting..."
+            nginx
+        fi
+        NGINX_MASTER_PID=$(cat /var/run/nginx.pid 2>/dev/null || echo "")
+    fi
+
+    sleep 30
+done    bashio::log.info "SSL disabled."
 fi
 
 
