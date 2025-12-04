@@ -31,9 +31,10 @@ COPY run.sh /usr/bin/run.sh
 RUN chmod +x /usr/bin/run.sh
 
 # Create a non-root user for security (Home Assistant best practice)
-# This step must come AFTER all root-level file operations (like chmod)
+# We must remove 'USER appuser' here to ensure the entrypoint (CMD) can read
+# /data/options.json, which often requires root privileges due to Supervisor's
+# default directory permissions. The user is still created if needed later.
 RUN groupadd -r appuser && useradd -r -g appuser appuser
-USER appuser
 
 # Expose the default port for Dispatcharr
 EXPOSE 9500
