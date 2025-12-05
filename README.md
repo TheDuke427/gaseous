@@ -33,14 +33,6 @@ A curated collection of Home Assistant add-ons featuring both optimized versions
 4. Add this repository URL: `https://github.com/TheDuke427/gaseous`
 5. Find the desired add-on in the store and click "Install"
 
-## 🛠️ Development Philosophy
-
-These add-ons are built with a focus on:
-- **Self-Hosted Control**: Maximize independence from third-party services
-- **Business-Ready Solutions**: Demonstrating automation capabilities suitable for SMB environments
-- **Proper Implementation**: Doing things "right" rather than relying on workarounds
-- **Integration Excellence**: Seamless operation within the Home Assistant ecosystem
-
 ## 📝 Repository Structure
 
 Each add-on follows the standard Home Assistant add-on structure:
