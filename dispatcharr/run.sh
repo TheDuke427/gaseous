@@ -1,13 +1,13 @@
-#!/usr/bin/with-contenv bashio
+#!/bin/bash
 set -e
 
-# Get configuration options
-LOG_LEVEL=$(bashio::config 'log_level')
-UWSGI_NICE_LEVEL=$(bashio::config 'uwsgi_nice_level')
-CELERY_NICE_LEVEL=$(bashio::config 'celery_nice_level')
+# Get configuration options from options.json
+CONFIG_PATH=/data/options.json
+LOG_LEVEL=$(jq -r '.log_level // "info"' $CONFIG_PATH)
+UWSGI_NICE_LEVEL=0
+CELERY_NICE_LEVEL=5
 
-bashio::log.info "Starting Dispatcharr..."
-bashio::log.info "Log level: ${LOG_LEVEL}"
+echo "[INFO] Starting Dispatcharr..."
 
 # Set up environment variables
 export DISPATCHARR_ENV=aio
@@ -24,7 +24,7 @@ export STATIC_ROOT=/data/staticfiles
 export MEDIA_ROOT=/data/media
 
 # Start Redis
-bashio::log.info "Starting Redis..."
+echo "[INFO] Starting Redis..."
 redis-server --daemonize yes --dir /data/redis --dbfilename dump.rdb --bind 127.0.0.1
 
 # Wait for Redis to be ready
@@ -32,7 +32,7 @@ sleep 2
 
 # Check if PostgreSQL data directory is initialized
 if [ ! -d "/data/db/base" ]; then
-    bashio::log.info "Initializing PostgreSQL database..."
+    echo "[INFO] Initializing PostgreSQL database..."
     mkdir -p /data/db
     chown -R postgres:postgres /data/db
     su-exec postgres initdb -D /data/db
@@ -45,19 +45,19 @@ if [ ! -d "/data/db/base" ]; then
 fi
 
 # Start PostgreSQL
-bashio::log.info "Starting PostgreSQL..."
+echo "[INFO] Starting PostgreSQL..."
 su-exec postgres postgres -D /data/db &
 POSTGRES_PID=$!
 
 # Wait for PostgreSQL to be ready
-bashio::log.info "Waiting for PostgreSQL to be ready..."
+echo "[INFO] Waiting for PostgreSQL to be ready..."
 for i in {1..30}; do
     if su-exec postgres pg_isready -h localhost -U postgres > /dev/null 2>&1; then
-        bashio::log.info "PostgreSQL is ready!"
+        echo "[INFO] PostgreSQL is ready!"
         break
     fi
     if [ $i -eq 30 ]; then
-        bashio::log.error "PostgreSQL failed to start"
+        echo "[ERROR] PostgreSQL failed to start"
         exit 1
     fi
     sleep 1
@@ -74,17 +74,17 @@ su-exec postgres psql -h localhost -U postgres -c "GRANT ALL PRIVILEGES ON DATAB
 su-exec postgres psql -h localhost -U postgres -d dispatcharr -c "GRANT ALL ON SCHEMA public TO dispatcharr;"
 
 # Run Django migrations
-bashio::log.info "Running database migrations..."
+echo "[INFO] Running database migrations..."
 cd /app/Dispatcharr
-python3 manage.py migrate --noinput || bashio::log.warning "Migrations may have issues, continuing..."
+python3 manage.py migrate --noinput || echo "[WARNING] Migrations may have issues, continuing..."
 
 # Collect static files
-bashio::log.info "Collecting static files..."
-python3 manage.py collectstatic --noinput --clear || bashio::log.warning "Static files collection had issues, continuing..."
+echo "[INFO] Collecting static files..."
+python3 manage.py collectstatic --noinput --clear || echo "[WARNING] Static files collection had issues, continuing..."
 
 # Create superuser if it doesn't exist
-bashio::log.info "Setting up admin user..."
-python3 manage.py shell <<EOF || bashio::log.warning "User creation had issues, continuing..."
+echo "[INFO] Setting up admin user..."
+python3 manage.py shell <<EOF || echo "[WARNING] User creation had issues, continuing..."
 from django.contrib.auth import get_user_model
 try:
     User = get_user_model()
@@ -98,12 +98,12 @@ except Exception as e:
 EOF
 
 # Start Celery worker
-bashio::log.info "Starting Celery worker..."
+echo "[INFO] Starting Celery worker..."
 nice -n ${CELERY_NICE_LEVEL} celery -A dispatcharr worker --loglevel=${LOG_LEVEL} --concurrency=2 &
 CELERY_PID=$!
 
 # Start Celery beat
-bashio::log.info "Starting Celery beat..."
+echo "[INFO] Starting Celery beat..."
 nice -n ${CELERY_NICE_LEVEL} celery -A dispatcharr beat --loglevel=${LOG_LEVEL} &
 CELERY_BEAT_PID=$!
 
@@ -111,7 +111,7 @@ CELERY_BEAT_PID=$!
 sleep 3
 
 # Start Gunicorn with Django application on port 8000
-bashio::log.info "Starting Dispatcharr backend server..."
+echo "[INFO] Starting Dispatcharr backend server..."
 nice -n ${UWSGI_NICE_LEVEL} gunicorn dispatcharr.wsgi:application \
     --bind 0.0.0.0:8000 \
     --workers 4 \
@@ -126,13 +126,13 @@ GUNICORN_PID=$!
 sleep 5
 
 # Start ingress proxy on port 9500
-bashio::log.info "Starting ingress proxy on port 9500..."
+echo "[INFO] Starting ingress proxy on port 9500..."
 python3 /ingress.py &
 INGRESS_PID=$!
 
 # Function to handle shutdown
 function stop_services() {
-    bashio::log.info "Shutting down Dispatcharr..."
+    echo "[INFO] Shutting down Dispatcharr..."
     kill -TERM $INGRESS_PID 2>/dev/null || true
     kill -TERM $GUNICORN_PID 2>/dev/null || true
     kill -TERM $CELERY_PID 2>/dev/null || true
@@ -144,10 +144,10 @@ function stop_services() {
 
 trap stop_services SIGTERM SIGINT
 
-bashio::log.info "Dispatcharr is running!"
-bashio::log.info "Web interface available at http://homeassistant.local:9500"
-bashio::log.info "Default credentials: admin / admin"
-bashio::log.warning "IMPORTANT: Change default admin password immediately!"
+echo "[INFO] Dispatcharr is running!"
+echo "[INFO] Web interface available at http://homeassistant.local:9500"
+echo "[INFO] Default credentials: admin / admin"
+echo "[WARNING] IMPORTANT: Change default admin password immediately!"
 
 # Wait for processes
 wait $GUNICORN_PID
