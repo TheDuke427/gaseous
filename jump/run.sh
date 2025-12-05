@@ -97,8 +97,8 @@ EOF
 cat >> /etc/php82/php.ini <<'EOF'
 
 ; Custom PHP settings
-display_errors = On
-display_startup_errors = On
+display_errors = Off
+display_startup_errors = Off
 error_reporting = E_ALL
 log_errors = On
 error_log = /var/log/nginx/php_errors.log
@@ -112,6 +112,14 @@ mkdir -p /config/jump/sites
 mkdir -p /config/jump/search
 mkdir -p /var/www/jump/cache
 mkdir -p /var/log/nginx
+
+# DEBUG: Check if directories were created
+bashio::log.info "=== DIRECTORY CHECK ==="
+bashio::log.info "Looking for jump folder in /config/:"
+ls -la /config/ | grep jump || bashio::log.warning "No jump folder found in /config/"
+bashio::log.info "Contents of /config/jump/:"
+ls -la /config/jump/ || bashio::log.error "Cannot list /config/jump/"
+bashio::log.info "========================"
 
 # Copy default files to /config/jump if they don't exist
 if [ ! "$(ls -A /config/jump/backgrounds)" ]; then
@@ -134,6 +142,13 @@ if [ ! "$(ls -A /config/jump/favicon)" ]; then
     cp -r /var/www/jump/favicon/* /config/jump/favicon/ 2>/dev/null || true
 fi
 
+bashio::log.info "=== FILES COPIED CHECK ==="
+bashio::log.info "Files in /config/jump/sites/:"
+ls -la /config/jump/sites/
+bashio::log.info "Files in /config/jump/search/:"
+ls -la /config/jump/search/
+bashio::log.info "========================"
+
 # Create symbolic links from /var/www/jump to /config/jump
 rm -rf /var/www/jump/backgrounds /var/www/jump/favicon /var/www/jump/sites /var/www/jump/search
 ln -sf /config/jump/backgrounds /var/www/jump/backgrounds
@@ -141,97 +156,73 @@ ln -sf /config/jump/favicon /var/www/jump/favicon
 ln -sf /config/jump/sites /var/www/jump/sites
 ln -sf /config/jump/search /var/www/jump/search
 
-# Get config values from Home Assistant
-bashio::log.info "Reading configuration..."
-SITENAME_VALUE=$(bashio::config 'sitename' 'Jump')
-SHOWCLOCK_VALUE=$(bashio::config 'showclock' 'true')
-AMPMCLOCK_VALUE=$(bashio::config 'ampmclock' 'false')
-SHOWGREETING_VALUE=$(bashio::config 'showgreeting' 'true')
-CUSTOMGREETING_VALUE=$(bashio::config 'customgreeting' '')
-SHOWSEARCH_VALUE=$(bashio::config 'showsearch' 'true')
-ALTLAYOUT_VALUE=$(bashio::config 'altlayout' 'false')
-CUSTOMWIDTH_VALUE=$(bashio::config 'customwidth' '')
-BGBLUR_VALUE=$(bashio::config 'bgblur' '')
-BGBRIGHT_VALUE=$(bashio::config 'bgbright' '')
-UNSPLASHAPIKEY_VALUE=$(bashio::config 'unsplashapikey' '')
-UNSPLASHCOLLECTIONS_VALUE=$(bashio::config 'unsplashcollections' '')
-ALTBGPROVIDER_VALUE=$(bashio::config 'altbgprovider' '')
-OWMAPIKEY_VALUE=$(bashio::config 'owmapikey' '')
-LATLONG_VALUE=$(bashio::config 'latlong' '')
-METRICTEMP_VALUE=$(bashio::config 'metrictemp' 'true')
-CHECKSTATUS_VALUE=$(bashio::config 'checkstatus' 'true')
-STATUSCACHE_VALUE=$(bashio::config 'statuscache' '5')
-NOINDEX_VALUE=$(bashio::config 'noindex' 'true')
-WWWURL_VALUE=$(bashio::config 'wwwurl' '')
-DISABLEIPV6_VALUE=$(bashio::config 'disableipv6' 'false')
-DOCKERSOCKET_VALUE=$(bashio::config 'dockersocket' '')
-DOCKERPROXYURL_VALUE=$(bashio::config 'dockerproxyurl' '')
-DOCKERONLYSITES_VALUE=$(bashio::config 'dockeronlysites' 'false')
-LANGUAGE_VALUE=$(bashio::config 'language' 'en')
-CACHEBYPASS_VALUE=$(bashio::config 'cachebypass' 'false')
-DEBUG_VALUE=$(bashio::config 'debug' 'false')
+# Export environment variables from Home Assistant config
+bashio::log.info "Setting environment variables..."
+export SITENAME=$(bashio::config 'sitename' 'Jump')
+export SHOWCLOCK=$(bashio::config 'showclock' 'true')
+export AMPMCLOCK=$(bashio::config 'ampmclock' 'false')
+export SHOWGREETING=$(bashio::config 'showgreeting' 'true')
+export CUSTOMGREETING=$(bashio::config 'customgreeting' '')
+export SHOWSEARCH=$(bashio::config 'showsearch' 'true')
+export ALTLAYOUT=$(bashio::config 'altlayout' 'false')
+export CUSTOMWIDTH=$(bashio::config 'customwidth' '')
+export BGBLUR=$(bashio::config 'bgblur' '')
+export BGBRIGHT=$(bashio::config 'bgbright' '')
+export UNSPLASHAPIKEY=$(bashio::config 'unsplashapikey' '')
+export UNSPLASHCOLLECTIONS=$(bashio::config 'unsplashcollections' '')
+export ALTBGPROVIDER=$(bashio::config 'altbgprovider' '')
+export OWMAPIKEY=$(bashio::config 'owmapikey' '')
+export LATLONG=$(bashio::config 'latlong' '')
+export METRICTEMP=$(bashio::config 'metrictemp' 'true')
+export CHECKSTATUS=$(bashio::config 'checkstatus' 'true')
+export STATUSCACHE=$(bashio::config 'statuscache' '5')
+export NOINDEX=$(bashio::config 'noindex' 'true')
+export WWWURL=$(bashio::config 'wwwurl' '')
+export DISABLEIPV6=$(bashio::config 'disableipv6' 'false')
+export DOCKERSOCKET=$(bashio::config 'dockersocket' '')
+export DOCKERPROXYURL=$(bashio::config 'dockerproxyurl' '')
+export DOCKERONLYSITES=$(bashio::config 'dockeronlysites' 'false')
+export LANGUAGE=$(bashio::config 'language' 'en')
+export CACHEBYPASS=$(bashio::config 'cachebypass' 'false')
+export DEBUG=$(bashio::config 'debug' 'false')
 
-# Convert empty strings to null for integers
-if [ -z "$CUSTOMWIDTH_VALUE" ]; then
-    CUSTOMWIDTH_PHP="null"
-else
-    CUSTOMWIDTH_PHP="$CUSTOMWIDTH_VALUE"
-fi
-
-if [ -z "$BGBLUR_VALUE" ]; then
-    BGBLUR_PHP="null"
-else
-    BGBLUR_PHP="$BGBLUR_VALUE"
-fi
-
-if [ -z "$BGBRIGHT_VALUE" ]; then
-    BGBRIGHT_PHP="null"
-else
-    BGBRIGHT_PHP="$BGBRIGHT_VALUE"
-fi
-
-bashio::log.info "Site name: ${SITENAME_VALUE}"
-
-# Create config.php with values directly from Home Assistant
+# Create config.php with environment variables from Home Assistant
 bashio::log.info "Generating config.php..."
-cat > /var/www/jump/config.php <<PHPEOF
+cat > /var/www/jump/config.php <<'PHPEOF'
 <?php
 
 return [
-    'sitename' => '${SITENAME_VALUE}',
-    'showclock' => ${SHOWCLOCK_VALUE},
-    'ampmclock' => ${AMPMCLOCK_VALUE},
-    'showgreeting' => ${SHOWGREETING_VALUE},
-    'customgreeting' => '${CUSTOMGREETING_VALUE}',
-    'showsearch' => ${SHOWSEARCH_VALUE},
-    'altlayout' => ${ALTLAYOUT_VALUE},
-    'customwidth' => ${CUSTOMWIDTH_PHP},
-    'bgblur' => ${BGBLUR_PHP},
-    'bgbright' => ${BGBRIGHT_PHP},
-    'unsplashapikey' => '${UNSPLASHAPIKEY_VALUE}',
-    'unsplashcollections' => '${UNSPLASHCOLLECTIONS_VALUE}',
-    'altbgprovider' => '${ALTBGPROVIDER_VALUE}',
-    'owmapikey' => '${OWMAPIKEY_VALUE}',
-    'latlong' => '${LATLONG_VALUE}',
-    'metrictemp' => ${METRICTEMP_VALUE},
-    'checkstatus' => ${CHECKSTATUS_VALUE},
-    'statuscache' => ${STATUSCACHE_VALUE},
-    'noindex' => ${NOINDEX_VALUE},
-    'wwwurl' => '${WWWURL_VALUE}',
+    'sitename' => getenv('SITENAME') ?: 'Jump',
+    'showclock' => filter_var(getenv('SHOWCLOCK') ?: 'true', FILTER_VALIDATE_BOOLEAN),
+    'ampmclock' => filter_var(getenv('AMPMCLOCK') ?: 'false', FILTER_VALIDATE_BOOLEAN),
+    'showgreeting' => filter_var(getenv('SHOWGREETING') ?: 'true', FILTER_VALIDATE_BOOLEAN),
+    'customgreeting' => getenv('CUSTOMGREETING') ?: '',
+    'showsearch' => filter_var(getenv('SHOWSEARCH') ?: 'true', FILTER_VALIDATE_BOOLEAN),
+    'altlayout' => filter_var(getenv('ALTLAYOUT') ?: 'false', FILTER_VALIDATE_BOOLEAN),
+    'customwidth' => getenv('CUSTOMWIDTH') ? (int)getenv('CUSTOMWIDTH') : null,
+    'bgblur' => getenv('BGBLUR') ? (int)getenv('BGBLUR') : null,
+    'bgbright' => getenv('BGBRIGHT') ? (int)getenv('BGBRIGHT') : null,
+    'unsplashapikey' => getenv('UNSPLASHAPIKEY') ?: '',
+    'unsplashcollections' => getenv('UNSPLASHCOLLECTIONS') ?: '',
+    'altbgprovider' => getenv('ALTBGPROVIDER') ?: '',
+    'owmapikey' => getenv('OWMAPIKEY') ?: '',
+    'latlong' => getenv('LATLONG') ?: '',
+    'metrictemp' => filter_var(getenv('METRICTEMP') ?: 'true', FILTER_VALIDATE_BOOLEAN),
+    'checkstatus' => filter_var(getenv('CHECKSTATUS') ?: 'true', FILTER_VALIDATE_BOOLEAN),
+    'statuscache' => getenv('STATUSCACHE') ? (int)getenv('STATUSCACHE') : 5,
+    'noindex' => filter_var(getenv('NOINDEX') ?: 'true', FILTER_VALIDATE_BOOLEAN),
+    'wwwurl' => getenv('WWWURL') ?: '',
     'wwwroot' => '/var/www/jump',
-    'disableipv6' => ${DISABLEIPV6_VALUE},
-    'dockersocket' => '${DOCKERSOCKET_VALUE}',
-    'dockerproxyurl' => '${DOCKERPROXYURL_VALUE}',
-    'dockeronlysites' => ${DOCKERONLYSITES_VALUE},
+    'disableipv6' => filter_var(getenv('DISABLEIPV6') ?: 'false', FILTER_VALIDATE_BOOLEAN),
+    'dockersocket' => getenv('DOCKERSOCKET') ?: '',
+    'dockerproxyurl' => getenv('DOCKERPROXYURL') ?: '',
+    'dockeronlysites' => filter_var(getenv('DOCKERONLYSITES') ?: 'false', FILTER_VALIDATE_BOOLEAN),
     'language' => 'en-gb',
-    'cachebypass' => ${CACHEBYPASS_VALUE},
-    'debug' => ${DEBUG_VALUE},
+    'cachebypass' => filter_var(getenv('CACHEBYPASS') ?: 'false', FILTER_VALIDATE_BOOLEAN),
+    'debug' => filter_var(getenv('DEBUG') ?: 'false', FILTER_VALIDATE_BOOLEAN),
     'cachedir' => '/var/www/jump/cache',
 ];
 PHPEOF
-
-bashio::log.info "Generated config.php - checking contents:"
-cat /var/www/jump/config.php
 
 # Set permissions
 chown -R nginx:nginx /var/www/jump
