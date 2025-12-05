@@ -68,6 +68,3 @@ RUN chmod a+x /run.sh
 EXPOSE 4500
 
 CMD [ "/run.sh" ]
-The key addition:
-RUN mkdir -p /var/www/jump/translations && \
-    echo '{}' > /var/www/jump/translations/en.json
