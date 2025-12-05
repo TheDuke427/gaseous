@@ -15,6 +15,7 @@ BLUR_NSFW=$(bashio::config 'redlib_default_blur_nsfw')
 DISABLE_CONFIRMATION=$(bashio::config 'redlib_default_disable_visit_reddit_confirmation')
 SUBSCRIPTIONS=$(bashio::config 'redlib_default_subscriptions')
 PUSHSHIFT=$(bashio::config 'redlib_pushshift_frontend')
+ROBOTS=$(bashio::config 'redlib_robots_disable_indexing')
 
 # Set environment variables
 export REDLIB_DEFAULT_THEME="${THEME}"
@@ -38,7 +39,11 @@ if bashio::config.has_value 'redlib_pushshift_frontend'; then
     export REDLIB_PUSHSHIFT_FRONTEND="${PUSHSHIFT}"
 fi
 
+if bashio::config.has_value 'redlib_robots_disable_indexing'; then
+    export REDLIB_ROBOTS_DISABLE_INDEXING="${ROBOTS}"
+fi
+
 bashio::log.info "Starting Redlib..."
 
-# Start Redlib
+# Start Redlib with SFW_ONLY flag to help avoid blocks
 exec /usr/local/bin/redlib --address 0.0.0.0 --port 8090
