@@ -97,8 +97,8 @@ EOF
 cat >> /etc/php82/php.ini <<'EOF'
 
 ; Custom PHP settings
-display_errors = Off
-display_startup_errors = Off
+display_errors = On
+display_startup_errors = On
 error_reporting = E_ALL
 log_errors = On
 error_log = /var/log/nginx/php_errors.log
@@ -114,17 +114,14 @@ mkdir -p /sites
 mkdir -p /search
 mkdir -p /var/log/nginx
 
-# Check if translations exist, if not create empty English translation
-if [ ! -f "/var/www/jump/translations/en.json" ]; then
-    bashio::log.warning "English translation file missing, creating empty one..."
-    cat > /var/www/jump/translations/en.json <<'TRANSEOF'
-{
-    "good_morning": "Good morning",
-    "good_afternoon": "Good afternoon",
-    "good_evening": "Good evening"
-}
-TRANSEOF
-fi
+# Debug: Check what files exist
+bashio::log.info "=== DEBUG: Checking Jump installation ==="
+bashio::log.info "Jump directory contents:"
+ls -la /var/www/jump/
+bashio::log.info "Translations directory:"
+ls -la /var/www/jump/translations/ 2>/dev/null || bashio::log.warning "No translations directory"
+bashio::log.info "Classes directory:"
+ls -la /var/www/jump/classes/ 2>/dev/null || bashio::log.warning "No classes directory"
 
 # Copy default files if they don't exist
 if [ ! "$(ls -A /backgrounds)" ]; then
@@ -223,12 +220,15 @@ return [
     'dockersocket' => getenv('DOCKERSOCKET') ?: '',
     'dockerproxyurl' => getenv('DOCKERPROXYURL') ?: '',
     'dockeronlysites' => filter_var(getenv('DOCKERONLYSITES') ?: 'false', FILTER_VALIDATE_BOOLEAN),
-    'language' => '',
+    'language' => getenv('LANGUAGE') ?: 'en',
     'cachebypass' => filter_var(getenv('CACHEBYPASS') ?: 'false', FILTER_VALIDATE_BOOLEAN),
-    'debug' => filter_var(getenv('DEBUG') ?: 'false', FILTER_VALIDATE_BOOLEAN),
+    'debug' => true,
     'cachedir' => '/var/www/jump/cache',
 ];
 PHPEOF
+
+bashio::log.info "Generated config.php contents:"
+cat /var/www/jump/config.php
 
 # Set permissions
 chown -R nginx:nginx /var/www/jump
