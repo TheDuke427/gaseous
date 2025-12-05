@@ -56,6 +56,7 @@ http {
             include fastcgi_params;
             fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
             fastcgi_param PATH_INFO $fastcgi_path_info;
+            fastcgi_param PHP_VALUE "error_log=/var/log/nginx/php_errors.log";
         }
         
         location ~ /\.ht {
@@ -87,6 +88,20 @@ pm.start_servers = 2
 pm.min_spare_servers = 1
 pm.max_spare_servers = 3
 chdir = /
+catch_workers_output = yes
+php_admin_value[error_log] = /var/log/nginx/php-fpm-error.log
+php_admin_flag[log_errors] = on
+EOF
+
+# Update PHP configuration
+cat >> /etc/php82/php.ini <<'EOF'
+
+; Custom PHP settings
+display_errors = On
+display_startup_errors = On
+error_reporting = E_ALL
+log_errors = On
+error_log = /var/log/nginx/php_errors.log
 EOF
 
 # Ensure directories exist
@@ -96,6 +111,7 @@ mkdir -p /backgrounds
 mkdir -p /favicon
 mkdir -p /sites
 mkdir -p /search
+mkdir -p /var/log/nginx
 
 # Copy default files if they don't exist
 if [ ! "$(ls -A /backgrounds)" ]; then
@@ -133,12 +149,35 @@ ln -sf /favicon /var/www/jump/favicon
 ln -sf /sites /var/www/jump/sites
 ln -sf /search /var/www/jump/search
 
-# Set permissions
-chown -R nginx:nginx /var/www/jump
-chown -R nginx:nginx /backgrounds
-chown -R nginx:nginx /favicon
-chown -R nginx:nginx /sites
-chown -R nginx:nginx /search
+# Export environment variables from Home Assistant config
+bashio::log.info "Setting environment variables..."
+export SITENAME=$(bashio::config 'sitename' 'Jump')
+export SHOWCLOCK=$(bashio::config 'showclock' 'true')
+export AMPMCLOCK=$(bashio::config 'ampmclock' 'false')
+export SHOWGREETING=$(bashio::config 'showgreeting' 'true')
+export CUSTOMGREETING=$(bashio::config 'customgreeting' '')
+export SHOWSEARCH=$(bashio::config 'showsearch' 'true')
+export ALTLAYOUT=$(bashio::config 'altlayout' 'false')
+export CUSTOMWIDTH=$(bashio::config 'customwidth' '')
+export BGBLUR=$(bashio::config 'bgblur' '')
+export BGBRIGHT=$(bashio::config 'bgbright' '')
+export UNSPLASHAPIKEY=$(bashio::config 'unsplashapikey' '')
+export UNSPLASHCOLLECTIONS=$(bashio::config 'unsplashcollections' '')
+export ALTBGPROVIDER=$(bashio::config 'altbgprovider' '')
+export OWMAPIKEY=$(bashio::config 'owmapikey' '')
+export LATLONG=$(bashio::config 'latlong' '')
+export METRICTEMP=$(bashio::config 'metrictemp' 'true')
+export CHECKSTATUS=$(bashio::config 'checkstatus' 'true')
+export STATUSCACHE=$(bashio::config 'statuscache' '5')
+export NOINDEX=$(bashio::config 'noindex' 'true')
+export WWWURL=$(bashio::config 'wwwurl' '')
+export DISABLEIPV6=$(bashio::config 'disableipv6' 'false')
+export DOCKERSOCKET=$(bashio::config 'dockersocket' '')
+export DOCKERPROXYURL=$(bashio::config 'dockerproxyurl' '')
+export DOCKERONLYSITES=$(bashio::config 'dockeronlysites' 'false')
+export LANGUAGE=$(bashio::config 'language' 'en')
+export CACHEBYPASS=$(bashio::config 'cachebypass' 'false')
+export DEBUG=$(bashio::config 'debug' 'false')
 
 # Create config.php with environment variables from Home Assistant
 bashio::log.info "Generating config.php..."
@@ -177,40 +216,21 @@ return [
 ];
 PHPEOF
 
-# Export environment variables from Home Assistant config
-bashio::log.info "Setting environment variables..."
-export SITENAME=$(bashio::config 'sitename' 'Jump')
-export SHOWCLOCK=$(bashio::config 'showclock' 'true')
-export AMPMCLOCK=$(bashio::config 'ampmclock' 'false')
-export SHOWGREETING=$(bashio::config 'showgreeting' 'true')
-export CUSTOMGREETING=$(bashio::config 'customgreeting' '')
-export SHOWSEARCH=$(bashio::config 'showsearch' 'true')
-export ALTLAYOUT=$(bashio::config 'altlayout' 'false')
-export CUSTOMWIDTH=$(bashio::config 'customwidth' '')
-export BGBLUR=$(bashio::config 'bgblur' '')
-export BGBRIGHT=$(bashio::config 'bgbright' '')
-export UNSPLASHAPIKEY=$(bashio::config 'unsplashapikey' '')
-export UNSPLASHCOLLECTIONS=$(bashio::config 'unsplashcollections' '')
-export ALTBGPROVIDER=$(bashio::config 'altbgprovider' '')
-export OWMAPIKEY=$(bashio::config 'owmapikey' '')
-export LATLONG=$(bashio::config 'latlong' '')
-export METRICTEMP=$(bashio::config 'metrictemp' 'true')
-export CHECKSTATUS=$(bashio::config 'checkstatus' 'true')
-export STATUSCACHE=$(bashio::config 'statuscache' '5')
-export NOINDEX=$(bashio::config 'noindex' 'true')
-export WWWURL=$(bashio::config 'wwwurl' '')
-export DISABLEIPV6=$(bashio::config 'disableipv6' 'false')
-export DOCKERSOCKET=$(bashio::config 'dockersocket' '')
-export DOCKERPROXYURL=$(bashio::config 'dockerproxyurl' '')
-export DOCKERONLYSITES=$(bashio::config 'dockeronlysites' 'false')
-export LANGUAGE=$(bashio::config 'language' 'en')
-export CACHEBYPASS=$(bashio::config 'cachebypass' 'false')
-export DEBUG=$(bashio::config 'debug' 'false')
+# Set permissions
+chown -R nginx:nginx /var/www/jump
+chown -R nginx:nginx /backgrounds
+chown -R nginx:nginx /favicon
+chown -R nginx:nginx /sites
+chown -R nginx:nginx /search
+chmod -R 755 /var/www/jump
+chmod -R 777 /var/www/jump/cache
 
-# Start PHP-FPM
 bashio::log.info "Starting PHP-FPM..."
 php-fpm82 -D
 
-# Start nginx
+# Wait a moment for PHP-FPM to start
+sleep 2
+
 bashio::log.info "Starting nginx..."
+bashio::log.info "Jump should be available on port 4500"
 exec nginx -g 'daemon off;'
