@@ -1,0 +1,57 @@
+{
+  "name": "Jump",
+  "version": "1.0.0",
+  "slug": "jump",
+  "description": "Self-hosted startpage and real-time status page for your server",
+  "arch": ["aarch64", "amd64", "armhf", "armv7", "i386"],
+  "init": false,
+  "url": "https://github.com/daledavies/jump",
+  "startup": "application",
+  "boot": "auto",
+  "ports": {
+    "4500/tcp": 4500
+  },
+  "ports_description": {
+    "4500/tcp": "Web interface"
+  },
+  "map": [
+    "config:rw",
+    "share:rw"
+  ],
+  "options": {
+    "sitename": "Jump",
+    "showclock": true,
+    "showsearch": true,
+    "checkstatus": true
+  },
+  "schema": {
+    "sitename": "str?",
+    "showclock": "bool?",
+    "ampmclock": "bool?",
+    "showgreeting": "bool?",
+    "customgreeting": "str?",
+    "showsearch": "bool?",
+    "altlayout": "bool?",
+    "customwidth": "int?",
+    "bgblur": "int?",
+    "bgbright": "int?",
+    "unsplashapikey": "str?",
+    "unsplashcollections": "str?",
+    "altbgprovider": "str?",
+    "owmapikey": "str?",
+    "latlong": "str?",
+    "metrictemp": "bool?",
+    "checkstatus": "bool?",
+    "statuscache": "int?",
+    "noindex": "bool?",
+    "wwwurl": "str?",
+    "disableipv6": "bool?",
+    "dockersocket": "str?",
+    "dockerproxyurl": "str?",
+    "dockeronlysites": "bool?",
+    "language": "str?",
+    "cachebypass": "bool?",
+    "debug": "bool?"
+  },
+  "image": "ghcr.io/your-username/{arch}-addon-jump"
+}
