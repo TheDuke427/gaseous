@@ -1,30 +1,16 @@
 name: Dispatcharr
 version: "0.11.2"
 slug: dispatcharr
-description: Your Ultimate IPTV & Stream Management Companion
+description: IPTV & Stream Management
 url: https://github.com/Dispatcharr/Dispatcharr
 arch:
   - aarch64
   - amd64
-  - armhf
   - armv7
-  - i386
-init: false
 ports:
   9500/tcp: 9500
-ports_description:
-  9500/tcp: Web interface
 webui: http://[HOST]:[PORT:9500]
-ingress: true
-ingress_port: 9500
-panel_icon: mdi:television-guide
-startup: services
-boot: auto
 options:
   log_level: info
-  uwsgi_nice_level: 0
-  celery_nice_level: 5
 schema:
   log_level: list(debug|info|warning|error)?
-  uwsgi_nice_level: int(-20,19)?
-  celery_nice_level: int(-20,19)?
