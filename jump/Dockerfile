@@ -21,6 +21,8 @@ RUN apk add --no-cache \
     php82-tokenizer \
     php82-xml \
     php82-xmlwriter \
+    php82-fileinfo \
+    php82-zip \
     curl \
     git \
     composer
