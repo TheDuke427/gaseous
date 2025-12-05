@@ -97,8 +97,8 @@ EOF
 cat >> /etc/php82/php.ini <<'EOF'
 
 ; Custom PHP settings
-display_errors = On
-display_startup_errors = On
+display_errors = Off
+display_startup_errors = Off
 error_reporting = E_ALL
 log_errors = On
 error_log = /var/log/nginx/php_errors.log
@@ -107,6 +107,7 @@ EOF
 # Ensure directories exist
 bashio::log.info "Setting up directories..."
 mkdir -p /var/www/jump/cache
+mkdir -p /var/www/jump/translations
 mkdir -p /backgrounds
 mkdir -p /favicon
 mkdir -p /sites
@@ -140,6 +141,12 @@ if [ ! "$(ls -A /favicon)" ]; then
     if [ -d "/var/www/jump/favicon" ]; then
         cp -r /var/www/jump/favicon/* /favicon/ 2>/dev/null || true
     fi
+fi
+
+# Ensure translations directory exists and has files
+if [ -d "/tmp/jump-repo/jumpapp/translations" ]; then
+    bashio::log.info "Copying translations..."
+    cp -r /tmp/jump-repo/jumpapp/translations/* /var/www/jump/translations/ 2>/dev/null || true
 fi
 
 # Create symbolic links
@@ -210,7 +217,7 @@ return [
     'dockersocket' => getenv('DOCKERSOCKET') ?: '',
     'dockerproxyurl' => getenv('DOCKERPROXYURL') ?: '',
     'dockeronlysites' => filter_var(getenv('DOCKERONLYSITES') ?: 'false', FILTER_VALIDATE_BOOLEAN),
-    'language' => getenv('LANGUAGE') ?: 'en',
+    'language' => '',
     'cachebypass' => filter_var(getenv('CACHEBYPASS') ?: 'false', FILTER_VALIDATE_BOOLEAN),
     'debug' => filter_var(getenv('DEBUG') ?: 'false', FILTER_VALIDATE_BOOLEAN),
     'cachedir' => '/var/www/jump/cache',
