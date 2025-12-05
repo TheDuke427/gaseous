@@ -57,7 +57,6 @@ http {
             fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
             fastcgi_param PATH_INFO $fastcgi_path_info;
             fastcgi_param PHP_VALUE "error_log=/var/log/nginx/php_errors.log";
-            fastcgi_param SITENAME $SITENAME;
         }
         
         location ~ /\.ht {
@@ -92,7 +91,6 @@ chdir = /
 catch_workers_output = yes
 php_admin_value[error_log] = /var/log/nginx/php-fpm-error.log
 php_admin_flag[log_errors] = on
-
 clear_env = no
 EOF
 
@@ -188,8 +186,6 @@ export DOCKERONLYSITES=$(bashio::config 'dockeronlysites' 'false')
 export LANGUAGE=$(bashio::config 'language' 'en')
 export CACHEBYPASS=$(bashio::config 'cachebypass' 'false')
 export DEBUG=$(bashio::config 'debug' 'false')
-
-bashio::log.info "SITENAME is set to: $SITENAME"
 
 # Create config.php with environment variables from Home Assistant
 bashio::log.info "Generating config.php..."
