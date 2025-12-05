@@ -27,29 +27,20 @@ RUN apk add --no-cache \
     git \
     composer
 
-# Clone the Jump repository and keep it
+# Clone the Jump repository
 WORKDIR /tmp
-RUN git clone https://github.com/daledavies/jump.git
-
-# Copy to web root
-RUN mkdir -p /var/www/jump \
-    && cp -r /tmp/jump/jumpapp/* /var/www/jump/
+RUN git clone https://github.com/daledavies/jump.git \
+    && mkdir -p /var/www/jump \
+    && cp -r /tmp/jump/jumpapp/* /var/www/jump/ \
+    && rm -rf /tmp/jump
 
 # Install PHP dependencies
 WORKDIR /var/www/jump
 RUN composer install --no-dev --optimize-autoloader
 
-# Ensure translations are present - copy them explicitly
-RUN if [ -d "/tmp/jump/jumpapp/translations" ]; then \
-        mkdir -p /var/www/jump/translations && \
-        cp -r /tmp/jump/jumpapp/translations/* /var/www/jump/translations/; \
-    fi
-
-# List translations to verify
-RUN ls -la /var/www/jump/translations/ || echo "No translations directory found"
-
-# Clean up
-RUN rm -rf /tmp/jump
+# Create translations directory and English translation file
+RUN mkdir -p /var/www/jump/translations && \
+    echo '{}' > /var/www/jump/translations/en.json
 
 # Create necessary directories
 RUN mkdir -p \
@@ -77,3 +68,6 @@ RUN chmod a+x /run.sh
 EXPOSE 4500
 
 CMD [ "/run.sh" ]
+The key addition:
+RUN mkdir -p /var/www/jump/translations && \
+    echo '{}' > /var/www/jump/translations/en.json
