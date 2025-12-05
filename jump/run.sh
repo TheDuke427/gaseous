@@ -91,7 +91,6 @@ chdir = /
 catch_workers_output = yes
 php_admin_value[error_log] = /var/log/nginx/php-fpm-error.log
 php_admin_flag[log_errors] = on
-clear_env = no
 EOF
 
 # Update PHP configuration
