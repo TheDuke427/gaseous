@@ -27,6 +27,7 @@ RUN apk add --no-cache \
     zlib-dev \
     openssl \
     su-exec \
+    jq \
     && rm -rf /var/cache/apk/*
 
 # Set working directory
