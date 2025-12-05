@@ -37,7 +37,10 @@ RUN git clone https://github.com/daledavies/jump.git \
 WORKDIR /var/www/jump
 RUN composer install --no-dev --optimize-autoloader
 
-# Clean up git repo but keep a copy for reference
+# Patch the Language class to handle empty language gracefully
+RUN sed -i "s/throw new LanguageException('Provided language code has no corresponding translation file.');/\/\/ Language disabled/g" /var/www/jump/classes/Language.php
+
+# Clean up git repo
 RUN rm -rf /tmp/jump
 
 # Create necessary directories
