@@ -1,0 +1,83 @@
+#include <tunables/global>
+
+profile dispatcharr flags=(attach_disconnected,mediate_deleted) {
+  #include <abstractions/base>
+
+  # Capabilities
+  capability,
+  file,
+  signal (send) set=(kill,term,int,hup,cont),
+
+  # S6-Overlay
+  /init ix,
+  /bin/** ix,
+  /usr/bin/** ix,
+  /run/{s6,s6-rc*,service}/** ix,
+  /package/** ix,
+  /command/** ix,
+  /etc/services.d/** rwix,
+  /etc/cont-init.d/** rwix,
+  /etc/cont-finish.d/** rwix,
+  /run/{,**} rwk,
+  /dev/tty rw,
+
+  # Bashio
+  /usr/lib/bashio/** ix,
+  /tmp/** rwk,
+
+  # Access to options.json and other files within your addon
+  /data/** rw,
+
+  # Start new profile for service
+  /run.sh cx -> dispatcharr_service,
+  /ingress.py cx -> dispatcharr_service,
+
+  profile dispatcharr_service flags=(attach_disconnected,mediate_deleted) {
+    #include <abstractions/base>
+
+    # Receive signals from S6-Overlay
+    signal (receive) peer=*_dispatcharr,
+
+    # Access to options.json and other files within your addon
+    /data/** rw,
+    
+    # Access to mapped volumes
+    /share/** rw,
+
+    # Access to application
+    /app/Dispatcharr/** r,
+    /app/Dispatcharr/**.py rix,
+    /app/Dispatcharr/staticfiles/** r,
+
+    # Python
+    /usr/bin/python3* rix,
+    /usr/lib/python3*/** r,
+    
+    # Celery
+    /usr/bin/celery rix,
+    
+    # Gunicorn
+    /usr/bin/gunicorn rix,
+    
+    # PostgreSQL
+    /usr/bin/postgres rix,
+    /usr/bin/pg_* rix,
+    
+    # Redis
+    /usr/bin/redis-server rix,
+    /usr/bin/redis-cli rix,
+    
+    # FFmpeg
+    /usr/bin/ffmpeg rix,
+    /usr/bin/ffprobe rix,
+
+    # Networking
+    capability net_bind_service,
+    capability net_raw,
+    
+    # Allow execution
+    capability sys_ptrace,
+    capability setuid,
+    capability setgid,
+  }
+}
