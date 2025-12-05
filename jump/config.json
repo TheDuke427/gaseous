@@ -52,6 +52,5 @@
     "language": "str?",
     "cachebypass": "bool?",
     "debug": "bool?"
-  },
-  "image": "ghcr.io/your-username/{arch}-addon-jump"
+  }
 }
