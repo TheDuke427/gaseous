@@ -27,20 +27,28 @@ RUN apk add --no-cache \
     git \
     composer
 
-# Clone the Jump repository
+# Clone the Jump repository and keep it
 WORKDIR /tmp
-RUN git clone https://github.com/daledavies/jump.git \
-    && mkdir -p /var/www/jump \
+RUN git clone https://github.com/daledavies/jump.git
+
+# Copy to web root
+RUN mkdir -p /var/www/jump \
     && cp -r /tmp/jump/jumpapp/* /var/www/jump/
 
 # Install PHP dependencies
 WORKDIR /var/www/jump
 RUN composer install --no-dev --optimize-autoloader
 
-# Patch the Language class to handle empty language gracefully
-RUN sed -i "s/throw new LanguageException('Provided language code has no corresponding translation file.');/\/\/ Language disabled/g" /var/www/jump/classes/Language.php
+# Ensure translations are present - copy them explicitly
+RUN if [ -d "/tmp/jump/jumpapp/translations" ]; then \
+        mkdir -p /var/www/jump/translations && \
+        cp -r /tmp/jump/jumpapp/translations/* /var/www/jump/translations/; \
+    fi
 
-# Clean up git repo
+# List translations to verify
+RUN ls -la /var/www/jump/translations/ || echo "No translations directory found"
+
+# Clean up
 RUN rm -rf /tmp/jump
 
 # Create necessary directories
