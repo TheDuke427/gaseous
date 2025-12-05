@@ -205,6 +205,7 @@ return [
     'statuscache' => getenv('STATUSCACHE') ? (int)getenv('STATUSCACHE') : 5,
     'noindex' => filter_var(getenv('NOINDEX') ?: 'true', FILTER_VALIDATE_BOOLEAN),
     'wwwurl' => getenv('WWWURL') ?: '',
+    'wwwroot' => '/var/www/jump',
     'disableipv6' => filter_var(getenv('DISABLEIPV6') ?: 'false', FILTER_VALIDATE_BOOLEAN),
     'dockersocket' => getenv('DOCKERSOCKET') ?: '',
     'dockerproxyurl' => getenv('DOCKERPROXYURL') ?: '',
