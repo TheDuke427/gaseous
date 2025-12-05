@@ -13,6 +13,7 @@ POST_SORT=$(bashio::config 'redlib_default_post_sort')
 SHOW_NSFW=$(bashio::config 'redlib_default_show_nsfw')
 BLUR_NSFW=$(bashio::config 'redlib_default_blur_nsfw')
 DISABLE_CONFIRMATION=$(bashio::config 'redlib_default_disable_visit_reddit_confirmation')
+SUBSCRIPTIONS=$(bashio::config 'redlib_default_subscriptions')
 PUSHSHIFT=$(bashio::config 'redlib_pushshift_frontend')
 
 # Set environment variables
@@ -28,6 +29,10 @@ export REDLIB_DEFAULT_POST_SORT="${POST_SORT}"
 export REDLIB_DEFAULT_SHOW_NSFW="${SHOW_NSFW}"
 export REDLIB_DEFAULT_BLUR_NSFW="${BLUR_NSFW}"
 export REDLIB_DEFAULT_DISABLE_VISIT_REDDIT_CONFIRMATION="${DISABLE_CONFIRMATION}"
+
+if bashio::config.has_value 'redlib_default_subscriptions'; then
+    export REDLIB_DEFAULT_SUBSCRIPTIONS="${SUBSCRIPTIONS}"
+fi
 
 if bashio::config.has_value 'redlib_pushshift_frontend'; then
     export REDLIB_PUSHSHIFT_FRONTEND="${PUSHSHIFT}"
