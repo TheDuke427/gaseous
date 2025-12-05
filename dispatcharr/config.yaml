@@ -17,7 +17,6 @@ ports_description:
 webui: http://[HOST]:[PORT:9500]
 ingress: true
 ingress_port: 9500
-ingress_stream: true
 panel_icon: mdi:television-guide
 startup: services
 boot: auto
@@ -29,4 +28,3 @@ schema:
   log_level: list(debug|info|warning|error)?
   uwsgi_nice_level: int(-20,19)?
   celery_nice_level: int(-20,19)?
-image: ghcr.io/{arch}-dispatcharr-addon
