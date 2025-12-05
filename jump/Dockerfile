@@ -31,12 +31,14 @@ RUN apk add --no-cache \
 WORKDIR /tmp
 RUN git clone https://github.com/daledavies/jump.git \
     && mkdir -p /var/www/jump \
-    && cp -r /tmp/jump/jumpapp/* /var/www/jump/ \
-    && rm -rf /tmp/jump
+    && cp -r /tmp/jump/jumpapp/* /var/www/jump/
 
 # Install PHP dependencies
 WORKDIR /var/www/jump
 RUN composer install --no-dev --optimize-autoloader
+
+# Clean up git repo but keep a copy for reference
+RUN rm -rf /tmp/jump
 
 # Create necessary directories
 RUN mkdir -p \
