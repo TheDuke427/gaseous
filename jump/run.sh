@@ -97,8 +97,8 @@ EOF
 cat >> /etc/php82/php.ini <<'EOF'
 
 ; Custom PHP settings
-display_errors = Off
-display_startup_errors = Off
+display_errors = On
+display_startup_errors = On
 error_reporting = E_ALL
 log_errors = On
 error_log = /var/log/nginx/php_errors.log
@@ -171,6 +171,25 @@ LANGUAGE_VALUE=$(bashio::config 'language' 'en')
 CACHEBYPASS_VALUE=$(bashio::config 'cachebypass' 'false')
 DEBUG_VALUE=$(bashio::config 'debug' 'false')
 
+# Convert empty strings to null for integers
+if [ -z "$CUSTOMWIDTH_VALUE" ]; then
+    CUSTOMWIDTH_PHP="null"
+else
+    CUSTOMWIDTH_PHP="$CUSTOMWIDTH_VALUE"
+fi
+
+if [ -z "$BGBLUR_VALUE" ]; then
+    BGBLUR_PHP="null"
+else
+    BGBLUR_PHP="$BGBLUR_VALUE"
+fi
+
+if [ -z "$BGBRIGHT_VALUE" ]; then
+    BGBRIGHT_PHP="null"
+else
+    BGBRIGHT_PHP="$BGBRIGHT_VALUE"
+fi
+
 bashio::log.info "Site name: ${SITENAME_VALUE}"
 
 # Create config.php with values directly from Home Assistant
@@ -186,9 +205,9 @@ return [
     'customgreeting' => '${CUSTOMGREETING_VALUE}',
     'showsearch' => ${SHOWSEARCH_VALUE},
     'altlayout' => ${ALTLAYOUT_VALUE},
-    'customwidth' => ${CUSTOMWIDTH_VALUE:-null},
-    'bgblur' => ${BGBLUR_VALUE:-null},
-    'bgbright' => ${BGBRIGHT_VALUE:-null},
+    'customwidth' => ${CUSTOMWIDTH_PHP},
+    'bgblur' => ${BGBLUR_PHP},
+    'bgbright' => ${BGBRIGHT_PHP},
     'unsplashapikey' => '${UNSPLASHAPIKEY_VALUE}',
     'unsplashcollections' => '${UNSPLASHCOLLECTIONS_VALUE}',
     'altbgprovider' => '${ALTBGPROVIDER_VALUE}',
@@ -210,6 +229,9 @@ return [
     'cachedir' => '/var/www/jump/cache',
 ];
 PHPEOF
+
+bashio::log.info "Generated config.php - checking contents:"
+cat /var/www/jump/config.php
 
 # Set permissions
 chown -R nginx:nginx /var/www/jump
