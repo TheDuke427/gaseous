@@ -104,50 +104,57 @@ log_errors = On
 error_log = /var/log/nginx/php_errors.log
 EOF
 
-# Ensure directories exist
-bashio::log.info "Setting up directories..."
+# Ensure directories exist in /config/jump (accessible from Home Assistant)
+bashio::log.info "Setting up directories in /config/jump..."
+mkdir -p /config/jump/backgrounds
+mkdir -p /config/jump/favicon
+mkdir -p /config/jump/sites
+mkdir -p /config/jump/search
 mkdir -p /var/www/jump/cache
-mkdir -p /backgrounds
-mkdir -p /favicon
-mkdir -p /sites
-mkdir -p /search
 mkdir -p /var/log/nginx
 
-# Copy default files if they don't exist
-if [ ! "$(ls -A /backgrounds)" ]; then
-    bashio::log.info "Copying default backgrounds..."
-    if [ -d "/var/www/jump/backgrounds" ]; then
-        cp -r /var/www/jump/backgrounds/* /backgrounds/ 2>/dev/null || true
-    fi
+# DEBUG: Check if directories were created
+bashio::log.info "=== DIRECTORY CHECK ==="
+bashio::log.info "Looking for jump folder in /config/:"
+ls -la /config/ | grep jump || bashio::log.warning "No jump folder found in /config/"
+bashio::log.info "Contents of /config/jump/:"
+ls -la /config/jump/ || bashio::log.error "Cannot list /config/jump/"
+bashio::log.info "========================"
+
+# Copy default files to /config/jump if they don't exist
+if [ ! "$(ls -A /config/jump/backgrounds)" ]; then
+    bashio::log.info "Copying default backgrounds to /config/jump/backgrounds..."
+    cp -r /var/www/jump/backgrounds/* /config/jump/backgrounds/ 2>/dev/null || true
 fi
 
-if [ ! "$(ls -A /sites)" ]; then
-    bashio::log.info "Copying default sites configuration..."
-    if [ -d "/var/www/jump/sites" ]; then
-        cp -r /var/www/jump/sites/* /sites/ 2>/dev/null || true
-    fi
+if [ ! "$(ls -A /config/jump/sites)" ]; then
+    bashio::log.info "Copying default sites configuration to /config/jump/sites..."
+    cp -r /var/www/jump/sites/* /config/jump/sites/ 2>/dev/null || true
 fi
 
-if [ ! "$(ls -A /search)" ]; then
-    bashio::log.info "Copying default search engines..."
-    if [ -d "/var/www/jump/search" ]; then
-        cp -r /var/www/jump/search/* /search/ 2>/dev/null || true
-    fi
+if [ ! "$(ls -A /config/jump/search)" ]; then
+    bashio::log.info "Copying default search engines to /config/jump/search..."
+    cp -r /var/www/jump/search/* /config/jump/search/ 2>/dev/null || true
 fi
 
-if [ ! "$(ls -A /favicon)" ]; then
-    bashio::log.info "Copying default favicon..."
-    if [ -d "/var/www/jump/favicon" ]; then
-        cp -r /var/www/jump/favicon/* /favicon/ 2>/dev/null || true
-    fi
+if [ ! "$(ls -A /config/jump/favicon)" ]; then
+    bashio::log.info "Copying default favicon to /config/jump/favicon..."
+    cp -r /var/www/jump/favicon/* /config/jump/favicon/ 2>/dev/null || true
 fi
 
-# Create symbolic links
+bashio::log.info "=== FILES COPIED CHECK ==="
+bashio::log.info "Files in /config/jump/sites/:"
+ls -la /config/jump/sites/
+bashio::log.info "Files in /config/jump/search/:"
+ls -la /config/jump/search/
+bashio::log.info "========================"
+
+# Create symbolic links from /var/www/jump to /config/jump
 rm -rf /var/www/jump/backgrounds /var/www/jump/favicon /var/www/jump/sites /var/www/jump/search
-ln -sf /backgrounds /var/www/jump/backgrounds
-ln -sf /favicon /var/www/jump/favicon
-ln -sf /sites /var/www/jump/sites
-ln -sf /search /var/www/jump/search
+ln -sf /config/jump/backgrounds /var/www/jump/backgrounds
+ln -sf /config/jump/favicon /var/www/jump/favicon
+ln -sf /config/jump/sites /var/www/jump/sites
+ln -sf /config/jump/search /var/www/jump/search
 
 # Export environment variables from Home Assistant config
 bashio::log.info "Setting environment variables..."
@@ -219,10 +226,7 @@ PHPEOF
 
 # Set permissions
 chown -R nginx:nginx /var/www/jump
-chown -R nginx:nginx /backgrounds
-chown -R nginx:nginx /favicon
-chown -R nginx:nginx /sites
-chown -R nginx:nginx /search
+chown -R nginx:nginx /config/jump
 chmod -R 755 /var/www/jump
 chmod -R 777 /var/www/jump/cache
 
@@ -234,4 +238,5 @@ sleep 2
 
 bashio::log.info "Starting nginx..."
 bashio::log.info "Jump should be available on port 4500"
+bashio::log.info "Edit files in /config/jump/ using File Editor or SSH"
 exec nginx -g 'daemon off;'
