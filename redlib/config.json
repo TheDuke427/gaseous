@@ -31,6 +31,7 @@
     "redlib_default_show_nsfw": "off",
     "redlib_default_blur_nsfw": "off",
     "redlib_default_disable_visit_reddit_confirmation": "off",
+    "redlib_default_subscriptions": "",
     "redlib_pushshift_frontend": ""
   },
   "schema": {
@@ -46,6 +47,7 @@
     "redlib_default_show_nsfw": "list(on|off)?",
     "redlib_default_blur_nsfw": "list(on|off)?",
     "redlib_default_disable_visit_reddit_confirmation": "list(on|off)?",
+    "redlib_default_subscriptions": "str?",
     "redlib_pushshift_frontend": "str?"
   }
 }
