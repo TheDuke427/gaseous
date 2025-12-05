@@ -107,11 +107,24 @@ EOF
 # Ensure directories exist
 bashio::log.info "Setting up directories..."
 mkdir -p /var/www/jump/cache
+mkdir -p /var/www/jump/translations
 mkdir -p /backgrounds
 mkdir -p /favicon
 mkdir -p /sites
 mkdir -p /search
 mkdir -p /var/log/nginx
+
+# Check if translations exist, if not create empty English translation
+if [ ! -f "/var/www/jump/translations/en.json" ]; then
+    bashio::log.warning "English translation file missing, creating empty one..."
+    cat > /var/www/jump/translations/en.json <<'TRANSEOF'
+{
+    "good_morning": "Good morning",
+    "good_afternoon": "Good afternoon",
+    "good_evening": "Good evening"
+}
+TRANSEOF
+fi
 
 # Copy default files if they don't exist
 if [ ! "$(ls -A /backgrounds)" ]; then
@@ -210,7 +223,7 @@ return [
     'dockersocket' => getenv('DOCKERSOCKET') ?: '',
     'dockerproxyurl' => getenv('DOCKERPROXYURL') ?: '',
     'dockeronlysites' => filter_var(getenv('DOCKERONLYSITES') ?: 'false', FILTER_VALIDATE_BOOLEAN),
-    'language' => getenv('LANGUAGE') ?: 'en',
+    'language' => '',
     'cachebypass' => filter_var(getenv('CACHEBYPASS') ?: 'false', FILTER_VALIDATE_BOOLEAN),
     'debug' => filter_var(getenv('DEBUG') ?: 'false', FILTER_VALIDATE_BOOLEAN),
     'cachedir' => '/var/www/jump/cache',
