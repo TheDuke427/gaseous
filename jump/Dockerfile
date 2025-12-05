@@ -57,3 +57,8 @@ RUN chown -R nginx:nginx /var/www/jump \
 # Copy run script
 COPY run.sh /
 RUN chmod a+x /run.sh
+
+# Expose port
+EXPOSE 4500
+
+CMD [ "/run.sh" ]
