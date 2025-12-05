@@ -1,5 +1,5 @@
 ARG BUILD_FROM
-FROM quay.io/redlib/redlib:latest AS redlib
+FROM ghcr.io/cycneuramus/containers:redlib AS redlib
 
 FROM $BUILD_FROM
 
