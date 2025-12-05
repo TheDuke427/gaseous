@@ -38,10 +38,6 @@ RUN git clone https://github.com/daledavies/jump.git \
 WORKDIR /var/www/jump
 RUN composer install --no-dev --optimize-autoloader
 
-# Create translations directory and English translation file
-RUN mkdir -p /var/www/jump/translations && \
-    echo '{}' > /var/www/jump/translations/en.json
-
 # Create necessary directories
 RUN mkdir -p \
     /backgrounds \
