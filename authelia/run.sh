@@ -86,8 +86,8 @@ access_control:
 session:
   cookies:
     - domain: example.com
-      authelia_url: https://authelia.example.com
-      default_redirection_url: https://authelia.example.com
+      authelia_url: https://auth.example.com
+      default_redirection_url: https://example.com
   secret: ${SESSION_SECRET}
 
 regulation:
