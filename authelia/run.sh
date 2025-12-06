@@ -12,6 +12,7 @@ if [ -f /data/options.json ]; then
     DEFAULT_PASSWORD=$(jq -r '.default_password // empty' /data/options.json)
     AUTHELIA_DOMAIN=$(jq -r '.authelia_domain // "auth.example.com"' /data/options.json)
     ROOT_DOMAIN=$(jq -r '.root_domain // "example.com"' /data/options.json)
+    CLOUDFLARE_TEAM=$(jq -r '.cloudflare_team // ""' /data/options.json)
 fi
 
 # Load or generate JWT secret
@@ -154,7 +155,7 @@ $(cat /data/authelia/oidc_key.pem | sed 's/^/          /')
         public: false
         authorization_policy: one_factor
         redirect_uris:
-          - https://YOUR-TEAM.cloudflareaccess.com/cdn-cgi/access/callback
+          - https://${CLOUDFLARE_TEAM}.cloudflareaccess.com/cdn-cgi/access/callback
         scopes:
           - openid
           - profile
@@ -173,6 +174,7 @@ echo "Client Secret: ${CLOUDFLARE_SECRET}"
 echo "Auth URL: https://${AUTHELIA_DOMAIN}/api/oidc/authorization"
 echo "Token URL: https://${AUTHELIA_DOMAIN}/api/oidc/token"
 echo "Userinfo URL: https://${AUTHELIA_DOMAIN}/api/oidc/userinfo"
+echo "Redirect URI: https://${CLOUDFLARE_TEAM}.cloudflareaccess.com/cdn-cgi/access/callback"
 echo "========================================"
 
 exec authelia --config /data/authelia/configuration.yml
