@@ -13,19 +13,19 @@ if [ -f /data/options.json ]; then
 fi
 
 if [ -z "$JWT_SECRET" ]; then
-    JWT_SECRET=$(openssl rand -base64 32)
+    JWT_SECRET=$(head -c 32 /dev/urandom | base64)
 fi
 
 if [ -z "$SESSION_SECRET" ]; then
-    SESSION_SECRET=$(openssl rand -base64 32)
+    SESSION_SECRET=$(head -c 32 /dev/urandom | base64)
 fi
 
 if [ -z "$ENCRYPTION_KEY" ]; then
-    ENCRYPTION_KEY=$(openssl rand -base64 32)
+    ENCRYPTION_KEY=$(head -c 32 /dev/urandom | base64)
 fi
 
 if [ -z "$DEFAULT_PASSWORD" ]; then
-    DEFAULT_PASSWORD=$(openssl rand -base64 16)
+    DEFAULT_PASSWORD=$(head -c 16 /dev/urandom | base64)
     echo "========================================"
     echo "Generated password for user ${DEFAULT_USER}: ${DEFAULT_PASSWORD}"
     echo "========================================"
@@ -51,11 +51,12 @@ EOF
 fi
 
 # Generate client secret for Cloudflare
-CLOUDFLARE_SECRET=$(openssl rand -base64 32)
+CLOUDFLARE_SECRET=$(head -c 32 /dev/urandom | base64)
+CLOUDFLARE_SECRET_HASH=$(authelia crypto hash generate pbkdf2 --password "${CLOUDFLARE_SECRET}" | grep 'Digest:' | awk '{print $2}')
 
 # Generate RSA key for OIDC
 if [ ! -f /data/authelia/oidc_key.pem ]; then
-    openssl genrsa -out /data/authelia/oidc_key.pem 4096
+    authelia crypto certificate rsa generate --bits 4096 --file.private-key /data/authelia/oidc_key.pem
 fi
 
 # Generate Authelia config
@@ -84,11 +85,10 @@ access_control:
       policy: one_factor
 
 session:
-  name: authelia_session
+  cookies:
+    - domain: example.com
+      authelia_url: https://authelia.example.com
   secret: ${SESSION_SECRET}
-  expiration: 1h
-  inactivity: 5m
-  domain: example.com
 
 regulation:
   max_retries: 3
@@ -104,6 +104,10 @@ notifier:
   filesystem:
     filename: /data/authelia/notification.txt
 
+identity_validation:
+  reset_password:
+    jwt_secret: ${JWT_SECRET}
+
 identity_providers:
   oidc:
     hmac_secret: ${JWT_SECRET}
@@ -113,7 +117,7 @@ $(cat /data/authelia/oidc_key.pem | sed 's/^/          /')
     clients:
       - client_id: cloudflare
         client_name: Cloudflare Zero Trust
-        client_secret: ${CLOUDFLARE_SECRET}
+        client_secret: ${CLOUDFLARE_SECRET_HASH}
         public: false
         authorization_policy: one_factor
         redirect_uris:
