@@ -8,8 +8,6 @@ if [ -f /data/options.json ]; then
     JWT_SECRET=$(jq -r '.jwt_secret // empty' /data/options.json)
     SESSION_SECRET=$(jq -r '.session_secret // empty' /data/options.json)
     ENCRYPTION_KEY=$(jq -r '.encryption_key // empty' /data/options.json)
-    DEFAULT_USER=$(jq -r '.default_user // "admin"' /data/options.json)
-    DEFAULT_PASSWORD=$(jq -r '.default_password // empty' /data/options.json)
     AUTHELIA_DOMAIN=$(jq -r '.authelia_domain // "auth.example.com"' /data/options.json)
     ROOT_DOMAIN=$(jq -r '.root_domain // "example.com"' /data/options.json)
     CLOUDFLARE_TEAM=$(jq -r '.cloudflare_team // ""' /data/options.json)
@@ -48,38 +46,44 @@ if [ -z "$ENCRYPTION_KEY" ]; then
     fi
 fi
 
-if [ -z "$DEFAULT_PASSWORD" ]; then
-    DEFAULT_PASSWORD=$(head -c 16 /dev/urandom | base64)
-    echo "========================================"
-    echo "Generated password for user ${DEFAULT_USER}: ${DEFAULT_PASSWORD}"
-    echo "========================================"
-fi
-
 # Create directories
 mkdir -p /data/authelia /data/users
 
-# Generate user database if it doesn't exist
-if [ ! -f /data/users/users_database.yml ]; then
-    echo "========================================"
-    echo "Creating user: ${DEFAULT_USER}"
-    echo "Password being used: ${DEFAULT_PASSWORD}"
-    echo "========================================"
-    
-    PASSWORD_HASH=$(authelia crypto hash generate argon2 --password "${DEFAULT_PASSWORD}" | grep 'Digest:' | awk '{print $2}')
-    
-    cat > /data/users/users_database.yml <<EOF
+# Always regenerate user database from config
+echo "========================================"
+echo "Generating user database from config..."
+echo "========================================"
+
+# Start building users YAML
+cat > /data/users/users_database.yml <<EOF
 users:
-  ${DEFAULT_USER}:
+EOF
+
+# Read users from config and add them
+USERS_COUNT=$(jq '.users | length' /data/options.json)
+for ((i=0; i<$USERS_COUNT; i++)); do
+    USERNAME=$(jq -r ".users[$i].username" /data/options.json)
+    PASSWORD=$(jq -r ".users[$i].password" /data/options.json)
+    EMAIL=$(jq -r ".users[$i].email" /data/options.json)
+    DISPLAYNAME=$(jq -r ".users[$i].displayname // \"$USERNAME\"" /data/options.json)
+    
+    echo "Adding user: $USERNAME ($EMAIL)"
+    
+    PASSWORD_HASH=$(authelia crypto hash generate argon2 --password "${PASSWORD}" | grep 'Digest:' | awk '{print $2}')
+    
+    cat >> /data/users/users_database.yml <<EOF
+  ${USERNAME}:
     disabled: false
-    displayname: "Administrator"
+    displayname: "${DISPLAYNAME}"
     password: "${PASSWORD_HASH}"
-    email: admin@authelia.com
+    email: ${EMAIL}
     groups:
       - admins
 EOF
-    
-    echo "User database created successfully"
-fi
+done
+
+echo "User database created with $USERS_COUNT users"
+echo "========================================"
 
 # Generate client secret for Cloudflare
 CLOUDFLARE_SECRET=$(head -c 32 /dev/urandom | base64)
