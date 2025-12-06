@@ -12,16 +12,37 @@ if [ -f /data/options.json ]; then
     DEFAULT_PASSWORD=$(jq -r '.default_password // empty' /data/options.json)
 fi
 
+# Load or generate JWT secret
 if [ -z "$JWT_SECRET" ]; then
-    JWT_SECRET=$(head -c 32 /dev/urandom | base64)
+    if [ -f /data/authelia/.jwt_secret ]; then
+        JWT_SECRET=$(cat /data/authelia/.jwt_secret)
+    else
+        JWT_SECRET=$(head -c 32 /dev/urandom | base64)
+        mkdir -p /data/authelia
+        echo "$JWT_SECRET" > /data/authelia/.jwt_secret
+    fi
 fi
 
+# Load or generate session secret
 if [ -z "$SESSION_SECRET" ]; then
-    SESSION_SECRET=$(head -c 32 /dev/urandom | base64)
+    if [ -f /data/authelia/.session_secret ]; then
+        SESSION_SECRET=$(cat /data/authelia/.session_secret)
+    else
+        SESSION_SECRET=$(head -c 32 /dev/urandom | base64)
+        mkdir -p /data/authelia
+        echo "$SESSION_SECRET" > /data/authelia/.session_secret
+    fi
 fi
 
+# Load or generate encryption key
 if [ -z "$ENCRYPTION_KEY" ]; then
-    ENCRYPTION_KEY=$(head -c 32 /dev/urandom | base64)
+    if [ -f /data/authelia/.encryption_key ]; then
+        ENCRYPTION_KEY=$(cat /data/authelia/.encryption_key)
+    else
+        ENCRYPTION_KEY=$(head -c 32 /dev/urandom | base64)
+        mkdir -p /data/authelia
+        echo "$ENCRYPTION_KEY" > /data/authelia/.encryption_key
+    fi
 fi
 
 if [ -z "$DEFAULT_PASSWORD" ]; then
