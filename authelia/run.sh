@@ -83,8 +83,13 @@ done
 echo "User database created with $USERS_COUNT users"
 echo "========================================"
 
-# Generate client secret for Cloudflare
-CLOUDFLARE_SECRET=$(head -c 32 /dev/urandom | base64)
+# Generate or load client secret for Cloudflare
+if [ -f /data/authelia/.cloudflare_secret ]; then
+    CLOUDFLARE_SECRET=$(cat /data/authelia/.cloudflare_secret)
+else
+    CLOUDFLARE_SECRET=$(head -c 32 /dev/urandom | base64)
+    echo "$CLOUDFLARE_SECRET" > /data/authelia/.cloudflare_secret
+fi
 CLOUDFLARE_SECRET_HASH=$(authelia crypto hash generate pbkdf2 --password "${CLOUDFLARE_SECRET}" | grep 'Digest:' | awk '{print $2}')
 
 # Generate RSA key for OIDC
