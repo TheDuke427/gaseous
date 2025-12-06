@@ -6,7 +6,6 @@ RUN apk add --no-cache \
     bash
 
 COPY run.sh /
-COPY configuration.yml /etc/authelia/
 RUN chmod a+x /run.sh
 
 EXPOSE 9091
