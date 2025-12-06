@@ -10,6 +10,8 @@ if [ -f /data/options.json ]; then
     ENCRYPTION_KEY=$(jq -r '.encryption_key // empty' /data/options.json)
     DEFAULT_USER=$(jq -r '.default_user // "admin"' /data/options.json)
     DEFAULT_PASSWORD=$(jq -r '.default_password // empty' /data/options.json)
+    AUTHELIA_DOMAIN=$(jq -r '.authelia_domain // "auth.example.com"' /data/options.json)
+    ROOT_DOMAIN=$(jq -r '.root_domain // "example.com"' /data/options.json)
 fi
 
 # Load or generate JWT secret
@@ -104,15 +106,15 @@ authentication_backend:
 access_control:
   default_policy: deny
   rules:
-    - domain: '*.example.com'
+    - domain: '*.${ROOT_DOMAIN}'
       policy: one_factor
 
 session:
-  cookies:
-    - domain: example.com
-      authelia_url: https://auth.example.com
-      default_redirection_url: https://example.com
   secret: ${SESSION_SECRET}
+  cookies:
+    - domain: ${ROOT_DOMAIN}
+      authelia_url: https://${AUTHELIA_DOMAIN}
+      default_redirection_url: https://${ROOT_DOMAIN}
 
 regulation:
   max_retries: 3
@@ -161,6 +163,9 @@ echo "========================================"
 echo "Cloudflare OIDC Configuration:"
 echo "Client ID: cloudflare"
 echo "Client Secret: ${CLOUDFLARE_SECRET}"
+echo "Auth URL: https://${AUTHELIA_DOMAIN}/api/oidc/authorization"
+echo "Token URL: https://${AUTHELIA_DOMAIN}/api/oidc/token"
+echo "Userinfo URL: https://${AUTHELIA_DOMAIN}/api/oidc/userinfo"
 echo "========================================"
 
 exec authelia --config /data/authelia/configuration.yml
