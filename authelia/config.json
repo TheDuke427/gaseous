@@ -20,14 +20,18 @@
     "session_secret": "",
     "encryption_key": "",
     "default_user": "admin",
-    "default_password": ""
+    "default_password": "",
+    "authelia_domain": "auth.yourdomain.com",
+    "root_domain": "yourdomain.com"
   },
   "schema": {
     "jwt_secret": "password?",
     "session_secret": "password?",
     "encryption_key": "password?",
     "default_user": "str?",
-    "default_password": "password?"
+    "default_password": "password?",
+    "authelia_domain": "str",
+    "root_domain": "str"
   },
   "map": [
     "share:rw",
