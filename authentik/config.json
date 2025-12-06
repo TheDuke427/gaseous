@@ -3,7 +3,6 @@
   "version": "2024.10.3",
   "slug": "authentik",
   "description": "Self-hosted identity provider with support for OIDC, SAML, and LDAP",
-  "url": "https://github.com/yourusername/hassio-addons/tree/main/authentik",
   "arch": ["aarch64", "amd64", "armv7"],
   "init": false,
   "startup": "services",
@@ -35,9 +34,6 @@
     "postgres_password": "password?",
     "log_level": "list(debug|info|warning|error)?",
     "workers": "int(1,8)?"
-  },
-  "environment": {
-    "AUTHENTIK_LOG_LEVEL": "info"
   },
   "map": [
     "share:rw"
