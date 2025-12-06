@@ -63,7 +63,6 @@ fi
 cat > /data/authelia/configuration.yml <<EOF
 ---
 theme: auto
-default_redirection_url: https://authelia.example.com
 
 server:
   address: 'tcp://0.0.0.0:9091'
@@ -88,6 +87,7 @@ session:
   cookies:
     - domain: example.com
       authelia_url: https://authelia.example.com
+      default_redirection_url: https://authelia.example.com
   secret: ${SESSION_SECRET}
 
 regulation:
