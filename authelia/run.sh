@@ -59,6 +59,11 @@ mkdir -p /data/authelia /data/users
 
 # Generate user database if it doesn't exist
 if [ ! -f /data/users/users_database.yml ]; then
+    echo "========================================"
+    echo "Creating user: ${DEFAULT_USER}"
+    echo "Password being used: ${DEFAULT_PASSWORD}"
+    echo "========================================"
+    
     PASSWORD_HASH=$(authelia crypto hash generate argon2 --password "${DEFAULT_PASSWORD}" | grep 'Digest:' | awk '{print $2}')
     
     cat > /data/users/users_database.yml <<EOF
@@ -71,6 +76,8 @@ users:
     groups:
       - admins
 EOF
+    
+    echo "User database created successfully"
 fi
 
 # Generate client secret for Cloudflare
@@ -115,6 +122,9 @@ session:
     - domain: ${ROOT_DOMAIN}
       authelia_url: https://${AUTHELIA_DOMAIN}
       default_redirection_url: https://${ROOT_DOMAIN}
+    - domain: 192.168.86.32
+      authelia_url: http://192.168.86.32:9091
+      default_redirection_url: http://192.168.86.32:9091
 
 regulation:
   max_retries: 3
