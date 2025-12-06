@@ -55,9 +55,7 @@ echo "Generating user database from config..."
 echo "========================================"
 
 # Start building users YAML
-cat > /data/users/users_database.yml <<EOF
-users:
-EOF
+echo "users:" > /data/users/users_database.yml
 
 # Read users from config and add them
 USERS_COUNT=$(jq '.users | length' /data/options.json)
@@ -76,7 +74,7 @@ for ((i=0; i<$USERS_COUNT; i++)); do
     disabled: false
     displayname: "${DISPLAYNAME}"
     password: "${PASSWORD_HASH}"
-    email: ${EMAIL}
+    email: "${EMAIL}"
     groups:
       - admins
 EOF
