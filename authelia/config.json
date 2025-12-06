@@ -1,0 +1,36 @@
+{
+  "name": "Authelia",
+  "version": "1.0.0",
+  "slug": "authelia",
+  "description": "Authentication and authorization server with OIDC support for Cloudflare Zero Trust",
+  "arch": ["aarch64", "amd64", "armv7"],
+  "startup": "services",
+  "boot": "auto",
+  "ports": {
+    "9091/tcp": 9091
+  },
+  "ports_description": {
+    "9091/tcp": "Authelia web interface"
+  },
+  "ingress": true,
+  "ingress_port": 9091,
+  "panel_icon": "mdi:shield-lock",
+  "options": {
+    "jwt_secret": "",
+    "session_secret": "",
+    "encryption_key": "",
+    "default_user": "admin",
+    "default_password": ""
+  },
+  "schema": {
+    "jwt_secret": "password?",
+    "session_secret": "password?",
+    "encryption_key": "password?",
+    "default_user": "str?",
+    "default_password": "password?"
+  },
+  "map": [
+    "share:rw",
+    "config:rw"
+  ]
+}
