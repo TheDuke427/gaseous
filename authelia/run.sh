@@ -122,9 +122,6 @@ session:
     - domain: ${ROOT_DOMAIN}
       authelia_url: https://${AUTHELIA_DOMAIN}
       default_redirection_url: https://${ROOT_DOMAIN}
-    - domain: 192.168.86.32
-      authelia_url: http://192.168.86.32:9091
-      default_redirection_url: http://192.168.86.32:9091
 
 regulation:
   max_retries: 3
