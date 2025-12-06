@@ -162,10 +162,12 @@ $(cat /data/authelia/oidc_key.pem | sed 's/^/          /')
           - openid
           - profile
           - email
+          - groups
         response_types:
           - code
         grant_types:
           - authorization_code
+        userinfo_signed_response_alg: none
         token_endpoint_auth_method: client_secret_basic
 EOF
 
@@ -176,6 +178,7 @@ echo "Client Secret: ${CLOUDFLARE_SECRET}"
 echo "Auth URL: https://${AUTHELIA_DOMAIN}/api/oidc/authorization"
 echo "Token URL: https://${AUTHELIA_DOMAIN}/api/oidc/token"
 echo "Userinfo URL: https://${AUTHELIA_DOMAIN}/api/oidc/userinfo"
+echo "Certificate URL: https://${AUTHELIA_DOMAIN}/jwks.json"
 echo "Redirect URI: https://${CLOUDFLARE_TEAM}.cloudflareaccess.com/cdn-cgi/access/callback"
 echo "========================================"
 
