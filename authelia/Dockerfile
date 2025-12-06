@@ -1,9 +1,10 @@
-ARG BUILD_FROM
-FROM ${BUILD_FROM}
+FROM authelia/authelia:4.38
+
+USER root
 
 RUN apk add --no-cache \
-    authelia \
-    bash
+    bash \
+    jq
 
 COPY run.sh /
 RUN chmod a+x /run.sh
