@@ -4,7 +4,8 @@ USER root
 
 RUN apk add --no-cache \
     bash \
-    jq
+    jq \
+    openssl
 
 COPY run.sh /
 RUN chmod a+x /run.sh
