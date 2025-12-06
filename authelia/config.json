@@ -19,21 +19,33 @@
     "jwt_secret": "",
     "session_secret": "",
     "encryption_key": "",
-    "default_user": "admin",
-    "default_password": "",
     "authelia_domain": "auth.yourdomain.com",
     "root_domain": "yourdomain.com",
-    "cloudflare_team": ""
+    "cloudflare_team": "",
+    "users": [
+      {
+        "username": "admin",
+        "password": "",
+        "email": "admin@example.com",
+        "displayname": "Administrator"
+      }
+    ]
   },
   "schema": {
     "jwt_secret": "password?",
     "session_secret": "password?",
     "encryption_key": "password?",
-    "default_user": "str?",
-    "default_password": "password?",
     "authelia_domain": "str",
     "root_domain": "str",
-    "cloudflare_team": "str"
+    "cloudflare_team": "str",
+    "users": [
+      {
+        "username": "str",
+        "password": "password",
+        "email": "email",
+        "displayname": "str?"
+      }
+    ]
   },
   "map": [
     "share:rw",
