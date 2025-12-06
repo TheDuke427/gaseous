@@ -66,6 +66,9 @@ theme: auto
 
 server:
   address: 'tcp://0.0.0.0:9091'
+  buffers:
+    read: 8192
+    write: 8192
 
 log:
   level: info
