@@ -156,6 +156,7 @@ $(cat /data/authelia/oidc_key.pem | sed 's/^/          /')
         client_secret: ${CLOUDFLARE_SECRET_HASH}
         public: false
         authorization_policy: one_factor
+        consent_mode: implicit
         redirect_uris:
           - https://${CLOUDFLARE_TEAM}.cloudflareaccess.com/cdn-cgi/access/callback
         scopes:
@@ -168,6 +169,7 @@ $(cat /data/authelia/oidc_key.pem | sed 's/^/          /')
         grant_types:
           - authorization_code
         userinfo_signed_response_alg: none
+        id_token_signed_response_alg: RS256
         token_endpoint_auth_method: client_secret_basic
 EOF
 
