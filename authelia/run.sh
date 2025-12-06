@@ -1,14 +1,16 @@
-#!/usr/bin/with-contenv bashio
+#!/usr/bin/env bash
 set -e
 
-CONFIG_PATH=/data/options.json
+echo "Starting Authelia..."
 
-# Get or generate secrets
-JWT_SECRET=$(bashio::config 'jwt_secret')
-SESSION_SECRET=$(bashio::config 'session_secret')
-ENCRYPTION_KEY=$(bashio::config 'encryption_key')
-DEFAULT_USER=$(bashio::config 'default_user')
-DEFAULT_PASSWORD=$(bashio::config 'default_password')
+# Get configuration from Home Assistant
+if [ -f /data/options.json ]; then
+    JWT_SECRET=$(jq -r '.jwt_secret // empty' /data/options.json)
+    SESSION_SECRET=$(jq -r '.session_secret // empty' /data/options.json)
+    ENCRYPTION_KEY=$(jq -r '.encryption_key // empty' /data/options.json)
+    DEFAULT_USER=$(jq -r '.default_user // "admin"' /data/options.json)
+    DEFAULT_PASSWORD=$(jq -r '.default_password // empty' /data/options.json)
+fi
 
 if [ -z "$JWT_SECRET" ]; then
     JWT_SECRET=$(openssl rand -base64 32)
@@ -24,10 +26,12 @@ fi
 
 if [ -z "$DEFAULT_PASSWORD" ]; then
     DEFAULT_PASSWORD=$(openssl rand -base64 16)
-    bashio::log.warning "Generated password for user ${DEFAULT_USER}: ${DEFAULT_PASSWORD}"
+    echo "========================================"
+    echo "Generated password for user ${DEFAULT_USER}: ${DEFAULT_PASSWORD}"
+    echo "========================================"
 fi
 
-# Create config directory
+# Create directories
 mkdir -p /data/authelia /data/users
 
 # Generate user database if it doesn't exist
@@ -46,6 +50,14 @@ users:
 EOF
 fi
 
+# Generate client secret for Cloudflare
+CLOUDFLARE_SECRET=$(openssl rand -base64 32)
+
+# Generate RSA key for OIDC
+if [ ! -f /data/authelia/oidc_key.pem ]; then
+    openssl genrsa -out /data/authelia/oidc_key.pem 4096
+fi
+
 # Generate Authelia config
 cat > /data/authelia/configuration.yml <<EOF
 ---
@@ -53,8 +65,7 @@ theme: auto
 default_redirection_url: https://authelia.example.com
 
 server:
-  host: 0.0.0.0
-  port: 9091
+  address: 'tcp://0.0.0.0:9091'
 
 log:
   level: info
@@ -96,12 +107,13 @@ notifier:
 identity_providers:
   oidc:
     hmac_secret: ${JWT_SECRET}
-    issuer_private_key: |
-$(openssl genrsa 4096 2>/dev/null | sed 's/^/      /')
+    jwks:
+      - key: |
+$(cat /data/authelia/oidc_key.pem | sed 's/^/          /')
     clients:
-      - id: cloudflare
-        description: Cloudflare Zero Trust
-        secret: $(openssl rand -base64 32)
+      - client_id: cloudflare
+        client_name: Cloudflare Zero Trust
+        client_secret: ${CLOUDFLARE_SECRET}
         public: false
         authorization_policy: one_factor
         redirect_uris:
@@ -117,5 +129,10 @@ $(openssl genrsa 4096 2>/dev/null | sed 's/^/      /')
         token_endpoint_auth_method: client_secret_basic
 EOF
 
-bashio::log.info "Starting Authelia..."
+echo "========================================"
+echo "Cloudflare OIDC Configuration:"
+echo "Client ID: cloudflare"
+echo "Client Secret: ${CLOUDFLARE_SECRET}"
+echo "========================================"
+
 exec authelia --config /data/authelia/configuration.yml
